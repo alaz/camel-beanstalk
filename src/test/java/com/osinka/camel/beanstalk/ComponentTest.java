@@ -18,6 +18,15 @@ public class ComponentTest {
         assertEquals("Only tube", component.parseUri("someTube"), new ConnectionSettings(Client.DEFAULT_HOST, Client.DEFAULT_PORT, "someTube"));
     }
 
+    @Test
+    public void fewTubesTest() {
+        final BeanstalkComponent component = new BeanstalkComponent();
+        assertArrayEquals("Full URI", component.parseUri("host:90/tube1+tube2").tubes, new String[] {"tube1", "tube2"});
+        assertArrayEquals("No port", component.parseUri("host/tube1+tube2").tubes, new String[] {"tube1", "tube2"});
+        assertArrayEquals("Only tubes", component.parseUri("tube1+tube2").tubes, new String[] {"tube1", "tube2"});
+        assertArrayEquals("Empty URI", component.parseUri("").tubes, new String[0]);
+    }
+
     @Test(expected=IllegalArgumentException.class)
     public void notValidHost() {
         final BeanstalkComponent component = new BeanstalkComponent();

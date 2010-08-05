@@ -1,6 +1,7 @@
 package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
+import com.surftools.BeanstalkClient.Job;
 import org.apache.camel.Exchange;
 import org.apache.camel.impl.PollingConsumerSupport;
 import org.apache.commons.logging.Log;
@@ -11,40 +12,48 @@ import org.apache.commons.logging.LogFactory;
  * @author alaz
  */
 public class BeanstalkConsumer extends PollingConsumerSupport {
-    private final transient Log log = LogFactory.getLog(BeanstalkConsumer.class);
+    private final transient Log LOG = LogFactory.getLog(BeanstalkConsumer.class);
     final Client beanstalk;
-    final BeanstalkEndpoint endpoint;
 
     public BeanstalkConsumer(BeanstalkEndpoint endpoint, Client beanstalk) {
         super(endpoint);
         this.beanstalk = beanstalk;
-        this.endpoint = endpoint;
     }
 
     @Override
     protected void doStart() {
-        log.debug(String.format("%s consumer started", endpoint.getConnection()));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("%s consumer started", getEndpoint().conn));
     }
 
     @Override
     protected void doStop() {
-        log.debug(String.format("%s consumer stopped", endpoint.getConnection()));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("%s consumer stopped", getEndpoint().conn));
     }
 
     @Override
     public Exchange receiveNoWait() {
+        Job job = beanstalk.reserve(0);
+        // TODO: getEndpoint().createExchange(ExchangePattern.InOnly)
+        // TODO: exchange.setUnitOfWork( new BeanstalkJob(jobId) )
         return null;
     }
 
     @Override
     public Exchange receive() {
-        beanstalk.reserve(null);
+        Job job = beanstalk.reserve(null);
         return null;
     }
 
     @Override
     public Exchange receive(long timeout) {
-        beanstalk.reserve(Integer.valueOf((int)timeout));
+        Job job = beanstalk.reserve(Integer.valueOf((int)timeout));
         return null;
+    }
+
+    @Override
+    public BeanstalkEndpoint getEndpoint() {
+        return (BeanstalkEndpoint) super.getEndpoint();
     }
 }

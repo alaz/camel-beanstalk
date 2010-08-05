@@ -6,13 +6,20 @@ import java.util.regex.Matcher;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.impl.DefaultComponent;
-import com.surftools.BeanstalkClientImpl.ClientImpl;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  *
  * @author alaz
  */
 public class BeanstalkComponent extends DefaultComponent {
+    public final static long DEFAULT_PRIORITY    = 0;
+    public final static int  DEFAULT_DELAY       = 0;
+    public final static int  DEFAULT_TIME_TO_RUN = 0;
+
+    private final transient Log log = LogFactory.getLog(BeanstalkComponent.class);
+
     public BeanstalkComponent() {
     }
 
@@ -22,12 +29,7 @@ public class BeanstalkComponent extends DefaultComponent {
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map parameters) throws IllegalArgumentException {
-        ConnectionSettings conn = parseUri(remaining);
-
-        ClientImpl beanstalk = new ClientImpl(conn.host, conn.port);
-        beanstalk.useTube(conn.tube);
-
-        return new BeanstalkEndpoint(uri, this, beanstalk);
+        return new BeanstalkEndpoint(uri, this, parseUri(remaining));
     }
 
     final Pattern HostPortTubeRE = Pattern.compile("([\\w.]+):([\\d]+)/(.+)");

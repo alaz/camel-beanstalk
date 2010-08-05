@@ -41,6 +41,6 @@ public class ConnectionSettings {
 
     @Override
     public String toString() {
-        return "ConnectionSettings("+host+","+port+","+tube+")";
+        return "beanstalk://"+host+":"+port+"/"+tube;
     }
 }

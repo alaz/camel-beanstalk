@@ -4,7 +4,7 @@
     <groupId>com.osinka</groupId>
     <artifactId>beanstalk-camel</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
     <name>Beanstalk component for Apache Camel</name>
     <inceptionYear>2010</inceptionYear>
 
@@ -12,6 +12,12 @@
         <name>Osinka.com</name>
         <url>http://www.osinka.com</url>
     </organization>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
 
     <developers>
         <developer>
@@ -67,6 +73,48 @@
                     <target>${java.src.version}</target>
                     <optimise>true</optimise>
                     <debug>true</debug>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila.maven-license-plugin</groupId>
+                <artifactId>maven-license-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <header>${basedir}/src/etc/header.txt</header>
+                    <quiet>false</quiet>
+                    <failIfMissing>true</failIfMissing>
+                    <excludes>
+                        <exclude>.git/**</exclude>
+                        <exclude>.manager/**</exclude>
+                        <exclude>*.gitignore</exclude>
+                        <exclude>etc/*.txt</exclude>
+                        <exclude>*.xml</exclude>
+                        <exclude>*.textile</exclude>
+                        <exclude>project/**</exclude>
+                    </excludes>
+                    <useDefaultExcludes>true</useDefaultExcludes>
+                    <mapping>
+                        <scala>JAVADOC_STYLE</scala>
+                    </mapping>
+                    <useDefaultMapping>true</useDefaultMapping>
+                    <encoding>UTF-8</encoding>
+                    <properties>
+                        <year>${project.inceptionYear}</year>
+                        <email>azarov@osinka.com</email>
+                        <author>Alexander Azarov</author>
+                    </properties>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>2.0.1</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <_versionpolicy>[$(@),$(version;+;$(@)))</_versionpolicy>
+                        <Export-Package>com.osinka.camel.beanstalk.*</Export-Package>
+                    </instructions>
                 </configuration>
             </plugin>
         </plugins>

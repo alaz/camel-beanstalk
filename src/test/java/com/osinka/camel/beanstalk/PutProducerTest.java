@@ -2,9 +2,13 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Job;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import org.apache.camel.EndpointInject;
+import org.apache.camel.ExchangePattern;
 import org.apache.camel.Produce;
+import org.apache.camel.Endpoint;
+import org.apache.camel.Exchange;
+import org.apache.camel.Message;
+import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -23,7 +27,7 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
     protected MockEndpoint resultEndpoint;
 
     @Produce(uri = "direct:start")
-    protected ProducerTemplate template;
+    protected ProducerTemplate direct;
 
     @Test
     public void testPut() throws InterruptedException, IOException {
@@ -32,12 +36,36 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         resultEndpoint.expectedMessageCount(1);
         resultEndpoint.allMessages().header(Headers.JOB_ID).isNotNull();
         resultEndpoint.expectedBodiesReceived(testBytes);
-        template.sendBody(testBytes);
+        direct.sendBody(testBytes);
 
-        assertMockEndpointsSatisfied();
+        resultEndpoint.assertIsSatisfied();
 
         final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
-        assertNotNull("Job ID in message", jobId);
+        assertNotNull("Job ID in 'In' message", jobId);
+
+        final Job job = beanstalk.reserve(1);
+        assertNotNull("Beanstalk client got message", job);
+        assertArrayEquals("Job body from the server", testBytes, job.getData());
+        assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
+        beanstalk.delete(jobId.longValue());
+    }
+
+    @Test
+    public void testOut() throws InterruptedException, IOException {
+        final byte[] testBytes = Helper.stringToBytes(testMessage);
+
+        final Endpoint endpoint = context.getEndpoint("beanstalk:"+tubeName);
+        final Exchange exchange = template.send(endpoint, ExchangePattern.InOut, new Processor() {
+            public void process(Exchange exchange) {
+                exchange.getIn().setBody(testBytes);
+            }
+        });
+
+        final Message out = exchange.getOut();
+        assertNotNull("Out message", out);
+
+        final Long jobId = out.getHeader(Headers.JOB_ID, Long.class);
+        assertNotNull("Job ID in 'Out' message", jobId);
 
         final Job job = beanstalk.reserve(1);
         assertNotNull("Beanstalk client got message", job);
@@ -53,9 +81,9 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         resultEndpoint.expectedMessageCount(1);
         resultEndpoint.allMessages().header(Headers.JOB_ID).isNotNull();
         resultEndpoint.expectedBodiesReceived(testBytes);
-        template.sendBodyAndHeader(testBytes, Headers.DELAY, 10);
+        direct.sendBodyAndHeader(testBytes, Headers.DELAY, 10);
 
-        assertMockEndpointsSatisfied();
+        resultEndpoint.assertIsSatisfied();
 
         final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in message", jobId);

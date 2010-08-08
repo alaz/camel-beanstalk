@@ -23,7 +23,7 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
     protected MockEndpoint resultEndpoint;
 
     @Produce(uri = "direct:start")
-    protected ProducerTemplate template;
+    protected ProducerTemplate direct;
 
     @Test
     public void testDelete() throws InterruptedException, IOException {
@@ -33,7 +33,7 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
         resultEndpoint.expectedMessageCount(1);
         resultEndpoint.allMessages().header(Headers.JOB_ID).isNotNull();
         resultEndpoint.allMessages().header(Headers.RESULT).isEqualTo(true);
-        template.sendBodyAndHeader(null, Headers.JOB_ID, jobId);
+        direct.sendBodyAndHeader(null, Headers.JOB_ID, jobId);
 
         assertMockEndpointsSatisfied();
 
@@ -48,7 +48,7 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
     @Test(expected=CamelExecutionException.class)
     public void testNoJobId() throws InterruptedException, IOException {
         resultEndpoint.expectedMessageCount(0);
-        template.sendBody(new byte[0]);
+        direct.sendBody(new byte[0]);
 
         resultEndpoint.assertIsSatisfied();
         assertListSize("Number of exceptions", resultEndpoint.getFailures(), 1);

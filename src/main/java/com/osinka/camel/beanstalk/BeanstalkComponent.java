@@ -23,6 +23,8 @@ import org.apache.camel.impl.DefaultComponent;
  * @author alaz
  */
 public class BeanstalkComponent extends DefaultComponent {
+    public static final String DEFAULT_TUBE     = "default";
+
     public final static String COMMAND_BURY     = "bury";
     public final static String COMMAND_RELEASE  = "release";
     public final static String COMMAND_PUT      = "put";

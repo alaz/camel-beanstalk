@@ -15,6 +15,14 @@ public class ConnectionSettings {
     final int port;
     final String[] tubes;
 
+    public ConnectionSettings(final String tube) {
+        this(Client.DEFAULT_HOST, Client.DEFAULT_PORT, tube);
+    }
+
+    public ConnectionSettings(final String host, final String tube) {
+        this(host, Client.DEFAULT_PORT, tube);
+    }
+
     public ConnectionSettings(final String host, final int port, final String tube) {
         this.host = host;
         this.port = port;
@@ -33,8 +41,10 @@ public class ConnectionSettings {
             throw new IllegalArgumentException("There must be only one tube specified for Beanstalk producer");
         }
 
+        final String tube = tubes.length > 0 ? tubes[0] : BeanstalkComponent.DEFAULT_TUBE;
+
         final ClientImpl client = new ClientImpl(host, port);
-        client.useTube(tubes[0]);
+        client.useTube(tube);
         return client;
     }
 

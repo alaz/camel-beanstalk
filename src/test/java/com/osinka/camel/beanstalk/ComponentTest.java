@@ -30,6 +30,6 @@ public class ComponentTest {
     @Test(expected=IllegalArgumentException.class)
     public void notValidHost() {
         final BeanstalkComponent component = new BeanstalkComponent();
-        fail(String.format("Calling on not valid URI must raise exception, but got result %s", component.parseUri("not_valid?host/port")));
+        fail(String.format("Calling on not valid URI must raise exception, but got result %s", component.parseUri("not_valid?host/tube?")));
     }
 }

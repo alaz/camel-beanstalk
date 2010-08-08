@@ -45,7 +45,7 @@ public class BeanstalkComponent extends DefaultComponent {
         return new BeanstalkEndpoint(uri, this, parseUri(remaining));
     }
 
-    final Pattern HostPortTubeRE = Pattern.compile("(([\\w.]+)(:([\\d]+))?/)?(.*)");
+    final Pattern HostPortTubeRE = Pattern.compile("^(([\\w.-]+)(:([\\d]+))?/)?([\\w%+]*)$");
 
     ConnectionSettings parseUri(String remaining) throws IllegalArgumentException {
         Matcher m = HostPortTubeRE.matcher(remaining);

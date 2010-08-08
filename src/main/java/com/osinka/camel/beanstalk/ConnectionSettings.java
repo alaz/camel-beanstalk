@@ -20,7 +20,7 @@ public class ConnectionSettings {
         this.port = port;
 
         Scanner scanner = new Scanner(tube);
-        scanner.useDelimiter("+");
+        scanner.useDelimiter("\\+");
         ArrayList<String> buffer = new ArrayList<String>();
         while (scanner.hasNext())
             buffer.add(scanner.next());

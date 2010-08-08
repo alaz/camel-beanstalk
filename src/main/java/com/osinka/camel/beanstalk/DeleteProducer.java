@@ -15,22 +15,22 @@ public class DeleteProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(DeleteProducer.class);
     final Client beanstalk;
 
-    DeleteProducer(BeanstalkEndpoint endpoint, Client beanstalk) {
+    DeleteProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
         super(endpoint);
         this.beanstalk = beanstalk;
     }
 
-    public void process(Exchange exchange) {
-        Message in = exchange.getIn();
+    public void process(final Exchange exchange) {
+        final Message in = exchange.getIn();
 
-        Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
+        final Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
         if (jobId == null) {
             exchange.setException(new RuntimeExchangeException("No Job ID defined in exchange", exchange));
             return;
         }
 
         try {
-            boolean result = beanstalk.delete(jobId.longValue());
+            final boolean result = beanstalk.delete(jobId.longValue());
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("Job %d deleted. Result is %b", jobId, result));
 

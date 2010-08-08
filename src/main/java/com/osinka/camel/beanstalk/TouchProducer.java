@@ -15,22 +15,22 @@ public class TouchProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(TouchProducer.class);
     final Client beanstalk;
 
-    TouchProducer(BeanstalkEndpoint endpoint, Client beanstalk) {
+    TouchProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
         super(endpoint);
         this.beanstalk = beanstalk;
     }
 
-    public void process(Exchange exchange) throws RuntimeExchangeException {
-        Message in = exchange.getIn();
+    public void process(final Exchange exchange) throws RuntimeExchangeException {
+        final Message in = exchange.getIn();
 
-        Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
+        final Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
         if (jobId == null) {
             exchange.setException(new RuntimeExchangeException("No Job ID defined in exchange", exchange));
             return;
         }
 
         try {
-            boolean result = beanstalk.touch(jobId.longValue());
+            final boolean result = beanstalk.touch(jobId.longValue());
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("Job %d touched. Result is %b", jobId, result));
 

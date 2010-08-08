@@ -20,17 +20,17 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
     int delay     = BeanstalkComponent.DEFAULT_DELAY;
     int timeToRun = BeanstalkComponent.DEFAULT_TIME_TO_RUN;
 
-    BeanstalkEndpoint(String uri, Component component, ConnectionSettings conn) {
+    BeanstalkEndpoint(final String uri, final Component component, final ConnectionSettings conn) {
         super(uri, component);
 
         this.conn = conn;
     }
 
-    public void setCommand(String command) {
+    public void setCommand(final String command) {
         this.command = command;
     }
 
-    public void setPriority(long priority) {
+    public void setPriority(final long priority) {
         this.priority = priority;
     }
 
@@ -38,7 +38,7 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
         return priority;
     }
 
-    public void setDelay(int delay) {
+    public void setDelay(final int delay) {
         this.delay = delay;
     }
 
@@ -46,7 +46,7 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
         return delay;
     }
 
-    public void setTimeToRun(int timeToRun) {
+    public void setTimeToRun(final int timeToRun) {
         this.timeToRun = timeToRun;
     }
 

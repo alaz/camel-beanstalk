@@ -15,24 +15,24 @@ public class BuryProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(BuryProducer.class);
     final Client beanstalk;
 
-    BuryProducer(BeanstalkEndpoint endpoint, Client beanstalk) {
+    BuryProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
         super(endpoint);
         this.beanstalk = beanstalk;
     }
 
-    public void process(Exchange exchange) {
-        Message in = exchange.getIn();
+    public void process(final Exchange exchange) {
+        final Message in = exchange.getIn();
 
-        Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
+        final Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
         if (jobId == null) {
             exchange.setException(new RuntimeExchangeException("No Job ID defined in exchange", exchange));
             return;
         }
 
-        long priority = getPriority(in);
+        final long priority = getPriority(in);
 
         try {
-            boolean result = beanstalk.bury(jobId.longValue(), priority);
+            final boolean result = beanstalk.bury(jobId.longValue(), priority);
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("Job %d buried with priority %d. Result is %b", jobId, priority, result));
 

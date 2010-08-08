@@ -36,25 +36,25 @@ public class BeanstalkComponent extends DefaultComponent {
     public BeanstalkComponent() {
     }
 
-    public BeanstalkComponent(CamelContext context) {
+    public BeanstalkComponent(final CamelContext context) {
         super(context);
     }
 
     @Override
-    protected Endpoint createEndpoint(String uri, String remaining, Map parameters) throws IllegalArgumentException {
+    protected Endpoint createEndpoint(final String uri, final String remaining, final Map parameters) throws IllegalArgumentException {
         return new BeanstalkEndpoint(uri, this, parseUri(remaining));
     }
 
     final Pattern HostPortTubeRE = Pattern.compile("^(([\\w.-]+)(:([\\d]+))?/)?([\\w%+]*)$");
 
-    ConnectionSettings parseUri(String remaining) throws IllegalArgumentException {
-        Matcher m = HostPortTubeRE.matcher(remaining);
+    ConnectionSettings parseUri(final String remaining) throws IllegalArgumentException {
+        final Matcher m = HostPortTubeRE.matcher(remaining);
         if (!m.matches())
             throw new IllegalArgumentException(String.format("Invalid path format: %s - should be [<hostName>[:<port>]/][<tubes>]", remaining));
 
-        String host = m.group(2) != null ? m.group(2) : Client.DEFAULT_HOST;
-        int port = m.group(4) != null ? Integer.parseInt(m.group(4)) : Client.DEFAULT_PORT;
-        String tubes = m.group(5) != null ? m.group(5) : "";
+        final String host = m.group(2) != null ? m.group(2) : Client.DEFAULT_HOST;
+        final int port = m.group(4) != null ? Integer.parseInt(m.group(4)) : Client.DEFAULT_PORT;
+        final String tubes = m.group(5) != null ? m.group(5) : "";
         return new ConnectionSettings(host, port, tubes);
     }
 }

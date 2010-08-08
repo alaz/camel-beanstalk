@@ -15,25 +15,25 @@ public class ReleaseProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(ReleaseProducer.class);
     final Client beanstalk;
 
-    ReleaseProducer(BeanstalkEndpoint endpoint, Client beanstalk) {
+    ReleaseProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
         super(endpoint);
         this.beanstalk = beanstalk;
     }
 
-    public void process(Exchange exchange) throws RuntimeExchangeException {
-        Message in = exchange.getIn();
+    public void process(final Exchange exchange) throws RuntimeExchangeException {
+        final Message in = exchange.getIn();
 
-        Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
+        final Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
         if (jobId == null) {
             exchange.setException(new RuntimeExchangeException("No Job ID defined in exchange", exchange));
             return;
         }
 
-        long priority = getPriority(in);
-        int delay = getDelay(in);
+        final long priority = getPriority(in);
+        final int delay = getDelay(in);
 
         try {
-            boolean result = beanstalk.release(jobId.longValue(), priority, delay);
+            final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("Job %d released with priority %d, delay %d seconds. Result is %b", jobId, priority, delay, result));
 

@@ -3,8 +3,6 @@ package com.osinka.camel.beanstalk;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 import com.surftools.BeanstalkClientImpl.ClientImpl;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.apache.camel.EndpointInject;
@@ -24,6 +22,7 @@ import org.junit.After;
  */
 public class PutProducerTest extends CamelTestSupport {
     final String tubeName = "putTest";
+    final String testMessage = "Hello, world!";
 
     @EndpointInject(uri = "mock:result")
     protected MockEndpoint resultEndpoint;
@@ -42,46 +41,47 @@ public class PutProducerTest extends CamelTestSupport {
 
     @Test
     public void testProducer() throws InterruptedException, IOException {
-        ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
-        DataOutputStream dataStream = new DataOutputStream(byteOS);
+        final byte[] testBytes = Helper.stringToBytes(testMessage);
 
-        String testMessage = "Hello, world!";
-        dataStream.writeUTF(testMessage);
-        byte[] testBytes = byteOS.toByteArray();
-
-        Client client = new ClientImpl();
+        final Client client = new ClientImpl();
         client.watch(tubeName);
 
-        resultEndpoint.expectedBodyReceived().constant(testBytes);
         resultEndpoint.expectedMessageCount(1);
+        resultEndpoint.allMessages().header(Headers.JOB_ID).isNotNull();
+        resultEndpoint.expectedBodiesReceived(testBytes);
         template.sendBody(testBytes);
 
-        resultEndpoint.assertIsSatisfied();
-        resultEndpoint.message(0).header(Headers.JOB_ID).isNotNull();
+        assertMockEndpointsSatisfied();
 
-        Job job = client.reserve(4);
-        assertNotNull("Beanstalk client got message", job);
-        assertArrayEquals("Job body", testBytes, job.getData());
-        client.delete(job.getJobId());
-//        assertEquals("Job ID", header.jobId, job.getJobId());
+        final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
+        assertNotNull("Job ID in message", jobId);
+
+        final Job job = client.reserve(4);
+        try {
+            assertNotNull("Beanstalk client got message", job);
+            assertArrayEquals("Job body from the server", testBytes, job.getData());
+            assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
+        } finally {
+            client.delete(job.getJobId());
+        }
     }
 
     @Test
     public void overrideTimeToRunTest() throws InterruptedException, IOException {
-        byte[] testBytes = new byte[0];
+        final byte[] testBytes = new byte[0];
 
-        Client client = new ClientImpl();
+        final Client client = new ClientImpl();
         client.watch(tubeName);
 
-        resultEndpoint.expectedBodyReceived().constant(testBytes);
         resultEndpoint.expectedMessageCount(1);
+        resultEndpoint.allMessages().header(Headers.JOB_ID).isNotNull();
+        resultEndpoint.expectedBodiesReceived(testBytes);
         template.sendBodyAndHeader(testBytes, Headers.TIME_TO_RUN, 1);
+
         resultEndpoint.await(2, TimeUnit.SECONDS);
+        assertMockEndpointsSatisfied();
 
-        resultEndpoint.assertIsSatisfied();
-        resultEndpoint.message(0).header(Headers.JOB_ID).isNotNull();
-
-        Job job = client.reserve(1);
+        final Job job = client.reserve(1);
         assertNull("Beanstalk client has no message", job);
     }
 
@@ -90,7 +90,8 @@ public class PutProducerTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("direct:start").to("beanstalk:"+tubeName+"?priority=1000&timeToRun=5&delay=1").to("mock:result").routeId("putNoCmd");
+                from("direct:start").to("beanstalk:"+tubeName+"?priority=1000&timeToRun=5&delay=1").to("mock:result");
+                // TODO: explicit command=put
             }
         };
     }

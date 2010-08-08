@@ -15,7 +15,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
     private final transient Log LOG = LogFactory.getLog(BeanstalkConsumer.class);
     final Client beanstalk;
 
-    public BeanstalkConsumer(BeanstalkEndpoint endpoint, Client beanstalk) {
+    public BeanstalkConsumer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
         super(endpoint);
         this.beanstalk = beanstalk;
     }
@@ -34,7 +34,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
 
     @Override
     public Exchange receiveNoWait() {
-        Job job = beanstalk.reserve(0);
+        final Job job = beanstalk.reserve(0);
         // TODO: getEndpoint().createExchange(ExchangePattern.InOnly)
         // TODO: exchange.setUnitOfWork( new BeanstalkJob(jobId) )
         return null;
@@ -42,13 +42,13 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
 
     @Override
     public Exchange receive() {
-        Job job = beanstalk.reserve(null);
+        final Job job = beanstalk.reserve(null);
         return null;
     }
 
     @Override
-    public Exchange receive(long timeout) {
-        Job job = beanstalk.reserve(Integer.valueOf((int)timeout));
+    public Exchange receive(final long timeout) {
+        final Job job = beanstalk.reserve(Integer.valueOf((int)timeout));
         return null;
     }
 

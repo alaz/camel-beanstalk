@@ -20,15 +20,15 @@ public abstract class AbstractBeanstalkProducer extends DefaultProducer {
     }
 
     public long getPriority(final Message in) {
-        return in.getHeader(Headers.PRIORITY, Long.valueOf(getEndpoint().getPriority()), Long.class).longValue();
+        return in.getHeader(Headers.PRIORITY, Long.valueOf(getEndpoint().getJobPriority()), Long.class).longValue();
     }
 
     public int getDelay(final Message in) {
-        return in.getHeader(Headers.DELAY, Integer.valueOf(getEndpoint().getDelay()), Integer.class).intValue();
+        return in.getHeader(Headers.DELAY, Integer.valueOf(getEndpoint().getJobDelay()), Integer.class).intValue();
     }
 
     public int getTimeToRun(final Message in) {
-        return in.getHeader(Headers.TIME_TO_RUN, Integer.valueOf(getEndpoint().getTimeToRun()), Integer.class).intValue();
+        return in.getHeader(Headers.TIME_TO_RUN, Integer.valueOf(getEndpoint().getJobTimeToRun()), Integer.class).intValue();
     }
 
     public Message getAnswerMessage(final Exchange exchange) {

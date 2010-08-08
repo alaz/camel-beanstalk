@@ -41,7 +41,7 @@ public class BeanstalkComponent extends DefaultComponent {
     }
 
     @Override
-    protected Endpoint createEndpoint(final String uri, final String remaining, final Map parameters) throws IllegalArgumentException {
+    protected Endpoint createEndpoint(final String uri, final String remaining, final Map<String,Object> parameters) throws IllegalArgumentException {
         return new BeanstalkEndpoint(uri, this, parseUri(remaining));
     }
 
@@ -56,5 +56,10 @@ public class BeanstalkComponent extends DefaultComponent {
         final int port = m.group(4) != null ? Integer.parseInt(m.group(4)) : Client.DEFAULT_PORT;
         final String tubes = m.group(5) != null ? m.group(5) : "";
         return new ConnectionSettings(host, port, tubes);
+    }
+
+    @Override
+    protected boolean useIntrospectionOnEndpoint() {
+        return true;
     }
 }

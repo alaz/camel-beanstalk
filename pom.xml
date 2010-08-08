@@ -30,7 +30,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <camel.version>[2.4,3)</camel.version>
+        <camel.version>[2.4.0,3.0)</camel.version>
         <jdk.version>1.6</jdk.version>
         <java.src.version>1.5</java.src.version>
     </properties>

@@ -14,7 +14,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import org.apache.camel.test.CamelTestSupport;
-import org.junit.After;
 
 /**
  *
@@ -29,15 +28,6 @@ public class PutProducerTest extends CamelTestSupport {
 
     @Produce(uri = "direct:start")
     protected ProducerTemplate template;
-
-    @Test
-    public void testEndpoint() {
-        BeanstalkEndpoint endpoint = context.getEndpoint("beanstalk:"+tubeName+"?priority=1000&timeToRun=5&delay=1", BeanstalkEndpoint.class);
-        assertNotNull("Beanstalk endpoint", endpoint);
-        assertEquals("Priority", 1000, endpoint.getPriority());
-//        assertEquals("Delay", 1, endpoint.getDelay());
-        assertEquals("Time to run", 5, endpoint.getTimeToRun());
-    }
 
     @Test
     public void testProducer() throws InterruptedException, IOException {
@@ -90,7 +80,7 @@ public class PutProducerTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("direct:start").to("beanstalk:"+tubeName+"?priority=1000&timeToRun=5&delay=1").to("mock:result");
+                from("direct:start").to("beanstalk:"+tubeName+"?jobPriority=1000&jobTimeToRun=5").to("mock:result");
                 // TODO: explicit command=put
             }
         };

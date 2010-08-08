@@ -1,5 +1,6 @@
 package com.osinka.camel.beanstalk;
 
+import java.util.Map;
 import org.apache.camel.Component;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultPollingEndpoint;
@@ -30,27 +31,27 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
         this.command = command;
     }
 
-    public void setPriority(final long priority) {
+    public void setJobPriority(final long priority) {
         this.priority = priority;
     }
 
-    public long getPriority() {
+    public long getJobPriority() {
         return priority;
     }
 
-    public void setDelay(final int delay) {
+    public void setJobDelay(final int delay) {
         this.delay = delay;
     }
 
-    public int getDelay() {
+    public int getJobDelay() {
         return delay;
     }
 
-    public void setTimeToRun(final int timeToRun) {
+    public void setJobTimeToRun(final int timeToRun) {
         this.timeToRun = timeToRun;
     }
 
-    public int getTimeToRun() {
+    public int getJobTimeToRun() {
         return timeToRun;
     }
 
@@ -86,11 +87,6 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
         if (LOG.isDebugEnabled())
             LOG.debug("Creating polling consumer for "+getEndpointUri());
         return new BeanstalkConsumer(this, conn.newReadingClient());
-    }
-
-    @Override
-    public boolean isLenientProperties() {
-        return false;
     }
 
     @Override

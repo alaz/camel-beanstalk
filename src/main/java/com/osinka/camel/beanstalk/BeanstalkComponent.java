@@ -29,9 +29,9 @@ public class BeanstalkComponent extends DefaultComponent {
     public final static String COMMAND_TOUCH    = "touch";
     public final static String COMMAND_DELETE   = "delete";
 
-    public final static long DEFAULT_PRIORITY       = 0;
+    public final static long DEFAULT_PRIORITY       = 0; // 0 is highest
     public final static int  DEFAULT_DELAY          = 0;
-    public final static int  DEFAULT_TIME_TO_RUN    = 0;
+    public final static int  DEFAULT_TIME_TO_RUN    = 0; // if 0 the daemon sets 1.
 
     public BeanstalkComponent() {
     }

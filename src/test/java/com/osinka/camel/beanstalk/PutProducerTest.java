@@ -39,7 +39,7 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in message", jobId);
 
-        final Job job = beanstalk.reserve(0);
+        final Job job = beanstalk.reserve(1);
         assertNotNull("Beanstalk client got message", job);
         assertArrayEquals("Job body from the server", testBytes, job.getData());
         assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());

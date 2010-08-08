@@ -2,6 +2,7 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
+import java.util.UUID;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -18,6 +19,7 @@ public abstract class BeanstalkCamelTestSupport extends CamelTestSupport {
     public void setUp() throws Exception {
         super.setUp();
 
+//        final UUID uuid = UUID.randomUUID();
         final String tube = getTubeName();
         beanstalk = new ConnectionSettings(tube).newWritingClient();
         beanstalk.watch(tube);
@@ -38,13 +40,6 @@ public abstract class BeanstalkCamelTestSupport extends CamelTestSupport {
                 ;
             while ((job = beanstalk.reserve(0)) != null)
                 beanstalk.delete(job.getJobId());
-
-//            while ((job = beanstalk.peekReady()) != null)
-//                beanstalk.delete(job.getJobId());
-//            while ((job = beanstalk.peekBuried()) != null)
-//                beanstalk.delete(job.getJobId());
-//            while ((job = beanstalk.peekDelayed()) != null)
-//                beanstalk.delete(job.getJobId());
         }
     }
 

@@ -3,7 +3,8 @@ package com.osinka.camel.beanstalk;
 import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
-import org.apache.camel.RuntimeExchangeException;
+import org.apache.camel.NoSuchHeaderException;
+import org.apache.camel.util.ExchangeHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -20,27 +21,18 @@ public class ReleaseProducer extends AbstractBeanstalkProducer {
         this.beanstalk = beanstalk;
     }
 
-    public void process(final Exchange exchange) throws RuntimeExchangeException {
+    public void process(final Exchange exchange) throws NoSuchHeaderException {
         final Message in = exchange.getIn();
 
-        final Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
-        if (jobId == null) {
-            exchange.setException(new RuntimeExchangeException("No Job ID defined in exchange", exchange));
-            return;
-        }
+        final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
+        final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
+        final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
 
-        final long priority = getPriority(in);
-        final int delay = getDelay(in);
+        final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("Job %d released with priority %d, delay %d seconds. Result is %b", jobId, priority, delay, result));
 
-        try {
-            final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
-            if (LOG.isDebugEnabled())
-                LOG.debug(String.format("Job %d released with priority %d, delay %d seconds. Result is %b", jobId, priority, delay, result));
-
-            answerWith(exchange, Headers.RESULT, result);
-        } catch (Exception e) {
-            exchange.setException(e);
-        }
+        answerWith(exchange, Headers.RESULT, result);
     }
 
     @Override

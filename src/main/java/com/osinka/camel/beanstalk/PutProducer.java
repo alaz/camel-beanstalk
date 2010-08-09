@@ -22,9 +22,9 @@ public class PutProducer extends AbstractBeanstalkProducer {
     public void process(final Exchange exchange) {
         final Message in = exchange.getIn();
 
-        final Long priority = getPriority(in);
-        final Integer delay = getDelay(in);
-        final Integer timeToRun = getTimeToRun(in);
+        final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
+        final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
+        final int timeToRun = BeanstalkExchangeHelper.getTimeToRun(getEndpoint(), exchange.getIn());
 
         final long jobId = beanstalk.put(priority, delay, timeToRun, in.getBody(byte[].class));
         if (LOG.isDebugEnabled())

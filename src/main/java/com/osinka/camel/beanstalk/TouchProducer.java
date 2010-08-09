@@ -2,8 +2,8 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
-import org.apache.camel.RuntimeExchangeException;
+import org.apache.camel.NoSuchHeaderException;
+import org.apache.camel.util.ExchangeHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -20,24 +20,13 @@ public class TouchProducer extends AbstractBeanstalkProducer {
         this.beanstalk = beanstalk;
     }
 
-    public void process(final Exchange exchange) throws RuntimeExchangeException {
-        final Message in = exchange.getIn();
+    public void process(final Exchange exchange) throws NoSuchHeaderException {
+        final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
+        final boolean result = beanstalk.touch(jobId.longValue());
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("Job %d touched. Result is %b", jobId, result));
 
-        final Long jobId = in.getHeader(Headers.JOB_ID, Long.class);
-        if (jobId == null) {
-            exchange.setException(new RuntimeExchangeException("No Job ID defined in exchange", exchange));
-            return;
-        }
-
-        try {
-            final boolean result = beanstalk.touch(jobId.longValue());
-            if (LOG.isDebugEnabled())
-                LOG.debug(String.format("Job %d touched. Result is %b", jobId, result));
-
-            answerWith(exchange, Headers.RESULT, result);
-        } catch (Exception e) {
-            exchange.setException(e);
-        }
+        answerWith(exchange, Headers.RESULT, result);
     }
 
     @Override

@@ -31,12 +31,9 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
 
     @Test
     public void testPut() throws InterruptedException, IOException {
-        final byte[] testBytes = Helper.stringToBytes(testMessage);
-
         resultEndpoint.expectedMessageCount(1);
         resultEndpoint.allMessages().header(Headers.JOB_ID).isNotNull();
-        resultEndpoint.expectedBodiesReceived(testBytes);
-        direct.sendBody(testBytes);
+        direct.sendBody(testMessage);
 
         resultEndpoint.assertIsSatisfied();
 
@@ -45,19 +42,17 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
 
         final Job job = beanstalk.reserve(1);
         assertNotNull("Beanstalk client got message", job);
-        assertArrayEquals("Job body from the server", testBytes, job.getData());
+        assertEquals("Job body from the server", testMessage, new String(job.getData()));
         assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
         beanstalk.delete(jobId.longValue());
     }
 
     @Test
     public void testOut() throws InterruptedException, IOException {
-        final byte[] testBytes = Helper.stringToBytes(testMessage);
-
         final Endpoint endpoint = context.getEndpoint("beanstalk:"+tubeName);
         final Exchange exchange = template.send(endpoint, ExchangePattern.InOut, new Processor() {
             public void process(Exchange exchange) {
-                exchange.getIn().setBody(testBytes);
+                exchange.getIn().setBody(testMessage);
             }
         });
 
@@ -69,7 +64,7 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
 
         final Job job = beanstalk.reserve(1);
         assertNotNull("Beanstalk client got message", job);
-        assertArrayEquals("Job body from the server", testBytes, job.getData());
+        assertEquals("Job body from the server", testMessage, new String(job.getData()));
         assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
         beanstalk.delete(jobId.longValue());
     }

@@ -3,7 +3,11 @@ package com.osinka.camel.beanstalk;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExchangePattern;
+import org.apache.camel.NoSuchHeaderException;
 import org.apache.camel.impl.PollingConsumerSupport;
+import org.apache.camel.spi.Synchronization;
+import org.apache.camel.util.ExchangeHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -11,9 +15,11 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author alaz
  */
-public class BeanstalkConsumer extends PollingConsumerSupport {
+public class BeanstalkConsumer extends PollingConsumerSupport implements Synchronization {
     private final transient Log LOG = LogFactory.getLog(BeanstalkConsumer.class);
+    
     final Client beanstalk;
+    String cmdOnFailure = "release";
 
     public BeanstalkConsumer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
         super(endpoint);
@@ -34,26 +40,94 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
 
     @Override
     public Exchange receiveNoWait() {
-        final Job job = beanstalk.reserve(0);
-        // TODO: getEndpoint().createExchange(ExchangePattern.InOnly)
-        // TODO: exchange.setUnitOfWork( new BeanstalkJob(jobId) )
-        return null;
+        return processJob(beanstalk.reserve(0));
     }
 
     @Override
     public Exchange receive() {
-        final Job job = beanstalk.reserve(null);
-        return null;
+        return processJob(beanstalk.reserve(null));
     }
 
     @Override
     public Exchange receive(final long timeout) {
-        final Job job = beanstalk.reserve(Integer.valueOf((int)timeout));
-        return null;
+        return processJob(beanstalk.reserve(Integer.valueOf((int)timeout)));
+    }
+
+    public String getOnFailure() {
+        return cmdOnFailure;
+    }
+
+    public void setOnFailure(String cmd) {
+        this.cmdOnFailure = cmd;
+    }
+
+    Exchange processJob(Job job) {
+        if (!isStarted()) {
+            if (LOG.isWarnEnabled())
+                LOG.warn("Called recived on BeanstalkConsumer that is not started yet");
+            return null;
+        }
+
+        if (job == null)
+            return null;
+
+        if (LOG.isInfoEnabled())
+            LOG.info(String.format("Received job ID %d (data length %d)", job.getJobId(), job.getData().length));
+
+        final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
+        exchange.getIn().setHeader(Headers.JOB_ID, job.getJobId());
+        exchange.getIn().setBody(job.getData(), byte[].class);
+        exchange.addOnCompletion(this);
+
+        return exchange;
+    }
+
+    @Override
+    public void onComplete(Exchange exchange) {
+        try {
+            final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
+            final boolean result = beanstalk.delete(jobId.longValue());
+
+            if (LOG.isInfoEnabled())
+                LOG.info(String.format("Job ID succeeded, deleting it. Result is %b", jobId.longValue(), result));
+        } catch (Exception e) {
+            exchange.setException(e);
+        }
+    }
+
+    @Override
+    public void onFailure(Exchange exchange) {
+        try {
+            final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
+
+            if (BeanstalkComponent.COMMAND_BURY.equals(cmdOnFailure)) {
+                final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
+                final boolean result = beanstalk.bury(jobId.longValue(), priority);
+
+                if (LOG.isWarnEnabled())
+                    LOG.warn(String.format("Job ID failed, burying it with priority %d. Result is %b", jobId, priority, result));
+            } else if (BeanstalkComponent.COMMAND_RELEASE.equals(cmdOnFailure)) {
+                final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
+                final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
+                final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
+
+                if (LOG.isWarnEnabled())
+                    LOG.warn(String.format("Job ID failed, releasing it with priority %d, delay %d. Result is %b", jobId, priority, delay, result));
+            } else if (BeanstalkComponent.COMMAND_DELETE.equals(cmdOnFailure)) {
+                final boolean result = beanstalk.delete(jobId.longValue());
+
+                if (LOG.isWarnEnabled())
+                    LOG.warn(String.format("Job ID failed, deleting it. Result is %b", jobId, result));
+            }
+        } catch (Exception e) {
+            exchange.setException(e);
+        }
     }
 
     @Override
     public BeanstalkEndpoint getEndpoint() {
+        if (!isStarted())
+            return null;
         return (BeanstalkEndpoint) super.getEndpoint();
     }
 }

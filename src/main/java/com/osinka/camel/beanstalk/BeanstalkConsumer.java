@@ -27,30 +27,18 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
     }
 
     @Override
-    protected void doStart() {
-        if (LOG.isDebugEnabled())
-            LOG.debug(String.format("%s consumer started", getEndpoint().conn));
-    }
-
-    @Override
-    protected void doStop() {
-        if (LOG.isDebugEnabled())
-            LOG.debug(String.format("%s consumer stopped", getEndpoint().conn));
-    }
-
-    @Override
     public Exchange receiveNoWait() {
-        return processJob(beanstalk.reserve(0));
+        return reserve(Integer.valueOf(0));
     }
 
     @Override
     public Exchange receive() {
-        return processJob(beanstalk.reserve(null));
+        return reserve(null);
     }
 
     @Override
     public Exchange receive(final long timeout) {
-        return processJob(beanstalk.reserve(Integer.valueOf((int)timeout)));
+        return reserve( Integer.valueOf((int)timeout) );
     }
 
     public String getOnFailure() {
@@ -61,13 +49,8 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
         this.cmdOnFailure = cmd;
     }
 
-    Exchange processJob(Job job) {
-        if (!isStarted()) {
-            if (LOG.isWarnEnabled())
-                LOG.warn("Called recived on BeanstalkConsumer that is not started yet");
-            return null;
-        }
-
+    Exchange reserve(Integer timeout) {
+        final Job job = beanstalk.reserve(timeout);
         if (job == null)
             return null;
 
@@ -83,7 +66,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
     }
 
     @Override
-    public void onComplete(Exchange exchange) {
+    public void onComplete(final Exchange exchange) {
         try {
             final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
             final boolean result = beanstalk.delete(jobId.longValue());
@@ -96,7 +79,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
     }
 
     @Override
-    public void onFailure(Exchange exchange) {
+    public void onFailure(final Exchange exchange) {
         try {
             final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
 
@@ -129,5 +112,13 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
         if (!isStarted())
             return null;
         return (BeanstalkEndpoint) super.getEndpoint();
+    }
+
+    @Override
+    protected void doStart() {
+    }
+
+    @Override
+    protected void doStop() {
     }
 }

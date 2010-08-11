@@ -1,5 +1,6 @@
-package com.osinka.camel.beanstalk;
+package com.osinka.camel.beanstalk.integration;
 
+import com.osinka.camel.beanstalk.ConnectionSettings;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 import java.util.UUID;

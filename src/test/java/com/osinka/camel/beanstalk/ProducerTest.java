@@ -26,8 +26,10 @@ import static org.mockito.Mockito.*;
  */
 public class ProducerTest extends CamelTestSupport {
     @Mock Client client;
-    BeanstalkEndpoint endpoint;
     final String testMessage = "hello, world";
+
+    @EndpointInject(uri = "beanstalk:tube")
+    protected BeanstalkEndpoint endpoint;
 
     @EndpointInject(uri = "mock:result")
     protected MockEndpoint resultEndpoint;
@@ -45,7 +47,7 @@ public class ProducerTest extends CamelTestSupport {
 
         when(client.put(priority, delay, timeToRun, payload)).thenReturn(jobId);
 
-        Producer producer = endpoint.createProducer();
+        final Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
         assertThat("Producer class", producer, instanceOf(PutProducer.class));
 
@@ -308,23 +310,26 @@ public class ProducerTest extends CamelTestSupport {
     }
 
     @Test
-    public void testRoute() throws Exception {
-        final long priority = BeanstalkComponent.DEFAULT_PRIORITY;
-        final int delay = BeanstalkComponent.DEFAULT_DELAY;
-        final int timeToRun = BeanstalkComponent.DEFAULT_TIME_TO_RUN;
+    public void testHeaderOverride() throws Exception {
+        final long priority = 1020;
+        final int delay = 50;
+        final int timeToRun = 75;
         final byte[] payload = Helper.stringToBytes(testMessage);
-        final long jobId = 111;
+        final long jobId = 113;
 
         when(client.put(priority, delay, timeToRun, payload)).thenReturn(jobId);
 
         resultEndpoint.expectedMessageCount(1);
+        resultEndpoint.allMessages().body().isEqualTo(testMessage);
         resultEndpoint.allMessages().header(Headers.JOB_ID).isEqualTo(Long.valueOf(jobId));
-        direct.sendBody(testMessage);
 
+        direct.sendBodyAndHeader(testMessage, Headers.TIME_TO_RUN, timeToRun);
         resultEndpoint.assertIsSatisfied();
 
         final Long jobIdIn = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in 'In' message", jobIdIn);
+
+        verify(client).put(priority, delay, timeToRun, payload);
     }
 
     @Override
@@ -332,7 +337,7 @@ public class ProducerTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("direct:start").to("beanstalk:tube").to("mock:result");
+                from("direct:start").to("beanstalk:tube?jobPriority=1020&jobDelay=50&jobTimeToRun=65").to("mock:result");
             }
         };
     }
@@ -344,6 +349,5 @@ public class ProducerTest extends CamelTestSupport {
         reset(client);
 	Helper.mockComponent(client);
 	super.setUp();
-        endpoint = Helper.getEndpoint("beanstalk:tube", context, client);
     }
 }

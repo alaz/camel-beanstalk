@@ -22,7 +22,8 @@ import static org.mockito.Mockito.*;
 public class ConsumerDefaultCmdTest extends CamelTestSupport {
     final String testMessage = "hello, world";
 
-    @Mock Client client;
+    @Mock
+    Client client;
 
     @EndpointInject(uri = "mock:result")
     MockEndpoint result;

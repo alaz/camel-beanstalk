@@ -2,6 +2,7 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
+import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.test.CamelTestSupport;
@@ -21,6 +22,9 @@ public class ConsumerTest extends CamelTestSupport {
     @Mock Client client;
     final String testMessage = "hello, world";
 
+    @EndpointInject(uri = "beanstalk:tube")
+    protected BeanstalkEndpoint endpoint;
+
     @Test
     public void testReceive() throws Exception {
         final long jobId = 111;
@@ -33,7 +37,7 @@ public class ConsumerTest extends CamelTestSupport {
                 .thenReturn(jobMock)
                 .thenReturn(null);
 
-        EndpointHelper.pollEndpoint(context.getEndpoint("beanstalk:tube"), new Processor() {
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
             public void process(Exchange exchange) {
                 assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
                 assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
@@ -47,7 +51,7 @@ public class ConsumerTest extends CamelTestSupport {
     public void testReceiveEmpty() throws Exception {
         when(client.reserve(0)).thenReturn(null);
 
-        EndpointHelper.pollEndpoint(context.getEndpoint("beanstalk:tube"), new Processor() {
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
             public void process(Exchange exchange) {
                 fail();
             }
@@ -65,7 +69,7 @@ public class ConsumerTest extends CamelTestSupport {
         when(jobMock.getData()).thenReturn(payload);
         when(client.reserve(0)).thenReturn(jobMock);
 
-        final Exchange exchange = context.getEndpoint("beanstalk:tube").createPollingConsumer().receiveNoWait();
+        final Exchange exchange = endpoint.createPollingConsumer().receiveNoWait();
         assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
         assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
         verify(client).reserve(0);
@@ -84,7 +88,7 @@ public class ConsumerTest extends CamelTestSupport {
                 .thenReturn(jobMock)
                 .thenReturn(null);
 
-        EndpointHelper.pollEndpoint(context.getEndpoint("beanstalk:tube"), new Processor() {
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
             public void process(Exchange exchange) {
                 assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
                 assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));

@@ -71,7 +71,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
             final boolean result = beanstalk.delete(jobId.longValue());
 
             if (LOG.isInfoEnabled())
-                LOG.info(String.format("Job ID succeeded, deleting it. Result is %b", jobId.longValue(), result));
+                LOG.info(String.format("Job %d succeeded, deleting it. Result is %b", jobId.longValue(), result));
         } catch (Exception e) {
             exchange.setException(e);
         }
@@ -87,19 +87,19 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
                 final boolean result = beanstalk.bury(jobId.longValue(), priority);
 
                 if (LOG.isWarnEnabled())
-                    LOG.warn(String.format("Job ID failed, burying it with priority %d. Result is %b", jobId, priority, result));
+                    LOG.warn(String.format("Job %d failed, burying it with priority %d. Result is %b", jobId, priority, result));
             } else if (BeanstalkComponent.COMMAND_RELEASE.equals(cmdOnFailure)) {
                 final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
                 final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
                 final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
 
                 if (LOG.isWarnEnabled())
-                    LOG.warn(String.format("Job ID failed, releasing it with priority %d, delay %d. Result is %b", jobId, priority, delay, result));
+                    LOG.warn(String.format("Job %d failed, releasing it with priority %d, delay %d. Result is %b", jobId, priority, delay, result));
             } else if (BeanstalkComponent.COMMAND_DELETE.equals(cmdOnFailure)) {
                 final boolean result = beanstalk.delete(jobId.longValue());
 
                 if (LOG.isWarnEnabled())
-                    LOG.warn(String.format("Job ID failed, deleting it. Result is %b", jobId, result));
+                    LOG.warn(String.format("Job %d failed, deleting it. Result is %b", jobId, result));
             }
         } catch (Exception e) {
             exchange.setException(e);

@@ -35,21 +35,30 @@ public class ConsumerTest extends CamelTestSupport {
 
         when(jobMock.getJobId()).thenReturn(jobId);
         when(jobMock.getData()).thenReturn(payload);
-        when(client.reserve(null)).thenReturn(jobMock);
+        when(client.reserve(0))
+                .thenReturn(jobMock)
+                .thenReturn(null);
 
-        final Exchange exchange = endpoint.createPollingConsumer().receive();
-        assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
-        assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
-        verify(client).reserve(null);
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
+            public void process(Exchange exchange) {
+                assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
+                assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
+            }
+        }, 0);
+
+        verify(client, times(2)).reserve(0);
     }
 
     @Test
     public void testReceiveEmpty() throws Exception {
-        when(client.reserve(null)).thenReturn(null);
+        when(client.reserve(0)).thenReturn(null);
 
-        final Exchange exchange = endpoint.createPollingConsumer().receive();
-        assertNull(exchange);
-        verify(client).reserve(null);
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
+            public void process(Exchange exchange) {
+                fail();
+            }
+        }, 0);
+        verify(client).reserve(0);
     }
 
     @Test
@@ -77,12 +86,17 @@ public class ConsumerTest extends CamelTestSupport {
 
         when(jobMock.getJobId()).thenReturn(jobId);
         when(jobMock.getData()).thenReturn(payload);
-        when(client.reserve(timeout)).thenReturn(jobMock);
+        when(client.reserve(timeout))
+                .thenReturn(jobMock)
+                .thenReturn(null);
 
-        final Exchange exchange = endpoint.createPollingConsumer().receive(timeout);
-        assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
-        assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
-        verify(client).reserve(timeout);
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
+            public void process(Exchange exchange) {
+                assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
+                assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
+            }
+        }, timeout);
+        verify(client, times(2)).reserve(timeout);
     }
 
     @Test
@@ -103,28 +117,6 @@ public class ConsumerTest extends CamelTestSupport {
         assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
         assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
         verify(client).reserve(timeout);
-    }
-
-    @Test
-    public void testReceiveThroughEndpoint() throws Exception {
-        final long jobId = 111;
-        final byte[] payload = Helper.stringToBytes(testMessage);
-        final Job jobMock = mock(Job.class);
-
-        when(jobMock.getJobId()).thenReturn(jobId);
-        when(jobMock.getData()).thenReturn(payload);
-        when(client.reserve(0))
-                .thenReturn(jobMock)
-                .thenReturn(null);
-
-        EndpointHelper.pollEndpoint(endpoint, new Processor() {
-            public void process(Exchange exchange) {
-                assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
-                assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
-            }
-        }, 0);
-
-        verify(client, times(2)).reserve(0);
     }
 
     @Before

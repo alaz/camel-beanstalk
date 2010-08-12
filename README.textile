@@ -1,0 +1,15 @@
+h1. Camel component for Beanstalk
+
+"Beanstalk":http://kr.github.com/beanstalkd/ is simple work queue service.
+
+"Apache Camel":http://camel.apache.org/ is an integration framework.
+
+@camel-beanstalk@ project provides a Camel component for job retrieval and post-processing of Beanstalk jobs.
+
+h2. Job lifecycle and Camel
+
+h2. Component URI format
+
+h3. Parameters
+
+h3. Consumer parameters

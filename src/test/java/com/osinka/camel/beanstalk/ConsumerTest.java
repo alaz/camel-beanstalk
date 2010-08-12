@@ -2,11 +2,8 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
-import java.io.IOException;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.CamelTestSupport;
 import org.apache.camel.util.EndpointHelper;
 import org.junit.Before;
@@ -15,7 +12,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**

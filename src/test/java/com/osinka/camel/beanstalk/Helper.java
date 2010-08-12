@@ -12,17 +12,16 @@ import org.apache.camel.CamelContext;
  */
 public final class Helper {
     public static ConnectionSettings mockConn(final Client client) {
-        return new ConnectionSettings("tube") {
+        return new MockConnectionSettings(client);
+    }
+
+    public static void mockComponent(final Client client) {
+        BeanstalkComponent.setConnectionSettingsFactory(new ConnectionSettingsFactory() {
             @Override
-            public Client newReadingClient() {
-                return client;
+            public ConnectionSettings parseUri(String uri) {
+                return new MockConnectionSettings(client);
             }
-            
-            @Override
-            public Client newWritingClient() {
-                return client;
-            }
-        };
+        });
     }
 
     public static BeanstalkEndpoint getEndpoint(String uri, CamelContext context, Client client) throws Exception {
@@ -43,5 +42,24 @@ public final class Helper {
             dataStream.close();
             byteOS.close();
         }
+    }
+}
+
+class MockConnectionSettings extends ConnectionSettings {
+    final Client client;
+
+    public MockConnectionSettings(Client client) {
+        super("tube");
+        this.client = client;
+    }
+
+    @Override
+    public Client newReadingClient() {
+        return client;
+    }
+
+    @Override
+    public Client newWritingClient() {
+        return client;
     }
 }

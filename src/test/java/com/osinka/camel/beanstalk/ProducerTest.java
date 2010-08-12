@@ -2,10 +2,15 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.CamelExecutionException;
+import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Processor;
+import org.apache.camel.Produce;
 import org.apache.camel.Producer;
+import org.apache.camel.ProducerTemplate;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.CamelTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +28,12 @@ public class ProducerTest extends CamelTestSupport {
     @Mock Client client;
     BeanstalkEndpoint endpoint;
     final String testMessage = "hello, world";
+
+    @EndpointInject(uri = "mock:result")
+    protected MockEndpoint resultEndpoint;
+
+    @Produce(uri = "direct:start")
+    protected ProducerTemplate direct;
 
     @Test
     public void testPut() throws Exception {
@@ -296,12 +307,43 @@ public class ProducerTest extends CamelTestSupport {
         verify(client, never()).touch(anyLong());
     }
 
+    @Test
+    public void testRoute() throws Exception {
+        final long priority = BeanstalkComponent.DEFAULT_PRIORITY;
+        final int delay = BeanstalkComponent.DEFAULT_DELAY;
+        final int timeToRun = BeanstalkComponent.DEFAULT_TIME_TO_RUN;
+        final byte[] payload = Helper.stringToBytes(testMessage);
+        final long jobId = 111;
+
+        when(client.put(priority, delay, timeToRun, payload)).thenReturn(jobId);
+
+        resultEndpoint.expectedMessageCount(1);
+        resultEndpoint.allMessages().header(Headers.JOB_ID).isEqualTo(Long.valueOf(jobId));
+        direct.sendBody(testMessage);
+
+        resultEndpoint.assertIsSatisfied();
+
+        final Long jobIdIn = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
+        assertNotNull("Job ID in 'In' message", jobIdIn);
+    }
+
+    @Override
+    protected RouteBuilder createRouteBuilder() {
+        return new RouteBuilder() {
+            @Override
+            public void configure() {
+                from("direct:start").to("beanstalk:tube").to("mock:result");
+            }
+        };
+    }
+
     @Before
     @Override
     public void setUp() throws Exception {
-        super.setUp();
         MockitoAnnotations.initMocks(this);
         reset(client);
+	Helper.mockComponent(client);
+	super.setUp();
         endpoint = Helper.getEndpoint("beanstalk:tube", context, client);
     }
 }

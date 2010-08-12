@@ -35,6 +35,8 @@ public class BeanstalkComponent extends DefaultComponent {
     public final static int  DEFAULT_DELAY          = 0;
     public final static int  DEFAULT_TIME_TO_RUN    = 0; // if 0 the daemon sets 1.
 
+    static ConnectionSettingsFactory connFactory = new ConnectionSettingsFactory();
+
     public BeanstalkComponent() {
     }
 
@@ -44,20 +46,11 @@ public class BeanstalkComponent extends DefaultComponent {
 
     @Override
     protected Endpoint createEndpoint(final String uri, final String remaining, final Map<String,Object> parameters) throws IllegalArgumentException {
-        return new BeanstalkEndpoint(uri, this, parseUri(remaining));
+        return new BeanstalkEndpoint(uri, this, connFactory.parseUri(remaining));
     }
 
-    final Pattern HostPortTubeRE = Pattern.compile("^(([\\w.-]+)(:([\\d]+))?/)?([\\w%+]*)$");
-
-    ConnectionSettings parseUri(final String remaining) throws IllegalArgumentException {
-        final Matcher m = HostPortTubeRE.matcher(remaining);
-        if (!m.matches())
-            throw new IllegalArgumentException(String.format("Invalid path format: %s - should be [<hostName>[:<port>]/][<tubes>]", remaining));
-
-        final String host = m.group(2) != null ? m.group(2) : Client.DEFAULT_HOST;
-        final int port = m.group(4) != null ? Integer.parseInt(m.group(4)) : Client.DEFAULT_PORT;
-        final String tubes = m.group(5) != null ? m.group(5) : "";
-        return new ConnectionSettings(host, port, tubes);
+    public static void setConnectionSettingsFactory(ConnectionSettingsFactory connFactory) {
+        BeanstalkComponent.connFactory = connFactory;
     }
 
     @Override

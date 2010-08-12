@@ -1,5 +1,6 @@
-package com.osinka.camel.beanstalk;
+package com.osinka.camel.beanstalk.integration;
 
+import com.osinka.camel.beanstalk.Headers;
 import com.surftools.BeanstalkClient.Job;
 import java.io.IOException;
 import org.apache.camel.CamelExecutionException;
@@ -16,8 +17,8 @@ import static org.junit.Assert.*;
  *
  * @author alaz
  */
-public class DeleteProducerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "deleteTest";
+public class TouchProducerTest extends BeanstalkCamelTestSupport {
+    final String tubeName = "touchTest";
 
     @EndpointInject(uri = "mock:result")
     protected MockEndpoint resultEndpoint;
@@ -25,8 +26,9 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
     @Produce(uri = "direct:start")
     protected ProducerTemplate direct;
 
+    @Ignore("requires reserve - touch sequence")
     @Test
-    public void testDelete() throws InterruptedException, IOException {
+    public void testBury() throws InterruptedException, IOException {
         long jobId = beanstalk.put(0, 0, 5, new byte[0]);
         assertTrue("Valid Job Id", jobId > 0);
 
@@ -41,8 +43,12 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
         assertNotNull("Job ID in message", messageJobId);
         assertEquals("Message Job ID equals", jobId, messageJobId.longValue());
 
-        final Job job = beanstalk.peek(jobId);
-        assertNull("Job has been deleted", job);
+        final Job job = beanstalk.reserve(0);
+        assertNull("Beanstalk client has no message", job);
+
+        final Job buried = beanstalk.peekBuried();
+        assertNotNull("Job in buried", buried);
+        assertEquals("Buried job id", jobId, buried.getJobId());
     }
 
     @Test(expected=CamelExecutionException.class)
@@ -59,7 +65,7 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("direct:start").to("beanstalk:"+tubeName+"?command=delete").to("mock:result");
+                from("direct:start").to("beanstalk:"+tubeName+"?command=touch").to("mock:result");
             }
         };
     }

@@ -4,7 +4,6 @@ import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
-import org.apache.camel.NoSuchHeaderException;
 import org.apache.camel.impl.PollingConsumerSupport;
 import org.apache.camel.spi.Synchronization;
 import org.apache.camel.util.ExchangeHelper;
@@ -109,8 +108,6 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
 
     @Override
     public BeanstalkEndpoint getEndpoint() {
-        if (!isStarted())
-            return null;
         return (BeanstalkEndpoint) super.getEndpoint();
     }
 

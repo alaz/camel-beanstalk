@@ -1,5 +1,6 @@
-package com.osinka.camel.beanstalk;
+package com.osinka.camel.beanstalk.integration;
 
+import com.osinka.camel.beanstalk.Headers;
 import com.surftools.BeanstalkClient.Job;
 import java.io.IOException;
 import org.apache.camel.CamelExecutionException;
@@ -16,8 +17,8 @@ import static org.junit.Assert.*;
  *
  * @author alaz
  */
-public class TouchProducerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "touchTest";
+public class BuryProducerTest extends BeanstalkCamelTestSupport {
+    final String tubeName = "buryTest";
 
     @EndpointInject(uri = "mock:result")
     protected MockEndpoint resultEndpoint;
@@ -25,7 +26,7 @@ public class TouchProducerTest extends BeanstalkCamelTestSupport {
     @Produce(uri = "direct:start")
     protected ProducerTemplate direct;
 
-    @Ignore("requires reserve - touch sequence")
+    @Ignore("requires reserve - bury sequence")
     @Test
     public void testBury() throws InterruptedException, IOException {
         long jobId = beanstalk.put(0, 0, 5, new byte[0]);
@@ -64,7 +65,7 @@ public class TouchProducerTest extends BeanstalkCamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("direct:start").to("beanstalk:"+tubeName+"?command=touch").to("mock:result");
+                from("direct:start").to("beanstalk:"+tubeName+"?command=bury").to("mock:result");
             }
         };
     }

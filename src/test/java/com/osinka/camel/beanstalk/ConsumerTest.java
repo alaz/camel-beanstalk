@@ -1,80 +1,126 @@
 package com.osinka.camel.beanstalk;
 
-import java.io.IOException;
+import com.surftools.BeanstalkClient.Client;
+import com.surftools.BeanstalkClient.Job;
 import org.apache.camel.Exchange;
-import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.Processor;
+import org.apache.camel.test.CamelTestSupport;
+import org.apache.camel.util.EndpointHelper;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  *
  * @author alaz
  */
-public class ConsumerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "reserveTest";
-    final String testMessage = "Hello, world!";
+public class ConsumerTest extends CamelTestSupport {
+    @Mock Client client;
+    BeanstalkEndpoint endpoint;
+    final String testMessage = "hello, world";
 
     @Test
-    public void testReceive() throws IOException, InterruptedException {
-        final long jobId = beanstalk.put(0, 0, 5, Helper.stringToBytes(testMessage));
+    public void testReceive() throws Exception {
+        final long jobId = 111;
+        final byte[] payload = Helper.stringToBytes(testMessage);
+        final Job jobMock = mock(Job.class);
 
-        final Exchange exchange = consumer.receive("beanstalk:"+getTubeName());
-        assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
-        assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
-    }
+        when(jobMock.getJobId()).thenReturn(jobId);
+        when(jobMock.getData()).thenReturn(payload);
+        when(client.reserve(0))
+                .thenReturn(jobMock)
+                .thenReturn(null);
 
-    @Test
-    public void testReceiveNoWait() throws IOException, InterruptedException {
-        assertNull(consumer.receiveNoWait("beanstalk:"+tubeName));
-
-        final long jobId = beanstalk.put(0, 0, 5, Helper.stringToBytes(testMessage));
-
-        final Exchange exchange = consumer.receiveNoWait("beanstalk:"+getTubeName());
-        assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
-        assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
-    }
-
-    @Test
-    @Ignore
-    public void testReceiveMock() throws IOException, InterruptedException {
-        final MockEndpoint mock = getMockEndpoint("mock:result");
-        final long jobId = beanstalk.put(0, 0, 5, Helper.stringToBytes(testMessage));
-
-        mock.message(0).header(Headers.JOB_ID).isEqualTo(Long.valueOf(jobId));
-        mock.expectedMessageCount(1);
-
-        mock.assertIsSatisfied();
-    }
-
-    @Ignore
-    @Test
-    public void testBuryOnFailure() {
-    }
-
-    @Ignore
-    @Test
-    public void testDeleteOnFailure() {
-    }
-
-    @Ignore
-    @Test
-    public void testReleaseOnFailure() {
-    }
-
-    @Override
-    protected RouteBuilder createRouteBuilder() {
-        return new RouteBuilder() {
-            @Override
-            public void configure() {
-                from("beanstalk:"+tubeName).to("mock:result");
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
+            public void process(Exchange exchange) {
+                assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
+                assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
             }
-        };
+        }, 0);
+
+        verify(client, times(2)).reserve(0);
     }
 
+    @Test
+    public void testReceiveEmpty() throws Exception {
+        when(client.reserve(0)).thenReturn(null);
+
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
+            public void process(Exchange exchange) {
+                fail();
+            }
+        }, 0);
+        verify(client).reserve(0);
+    }
+
+    @Test
+    public void testReceiveNoWait() throws Exception {
+        final long jobId = 111;
+        final byte[] payload = Helper.stringToBytes(testMessage);
+        final Job jobMock = mock(Job.class);
+
+        when(jobMock.getJobId()).thenReturn(jobId);
+        when(jobMock.getData()).thenReturn(payload);
+        when(client.reserve(0)).thenReturn(jobMock);
+
+        final Exchange exchange = endpoint.createPollingConsumer().receiveNoWait();
+        assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
+        assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
+        verify(client).reserve(0);
+    }
+
+    @Test
+    public void testReceiveTimeout() throws Exception {
+        final int timeout = 15;
+        final long jobId = 111;
+        final byte[] payload = Helper.stringToBytes(testMessage);
+        final Job jobMock = mock(Job.class);
+
+        when(jobMock.getJobId()).thenReturn(jobId);
+        when(jobMock.getData()).thenReturn(payload);
+        when(client.reserve(timeout))
+                .thenReturn(jobMock)
+                .thenReturn(null);
+
+        EndpointHelper.pollEndpoint(endpoint, new Processor() {
+            public void process(Exchange exchange) {
+                assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
+                assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
+            }
+        }, timeout);
+        verify(client, times(2)).reserve(timeout);
+    }
+
+    @Test
+    @Ignore
+    public void testReleaseOnComplete() throws Exception {
+        final long jobId = 111;
+        final long priority = BeanstalkComponent.DEFAULT_PRIORITY;
+        final int delay = BeanstalkComponent.DEFAULT_DELAY;
+        final int timeout = 0;
+        final byte[] payload = Helper.stringToBytes(testMessage);
+        final Job jobMock = mock(Job.class);
+
+        when(jobMock.getJobId()).thenReturn(jobId);
+        when(jobMock.getData()).thenReturn(payload);
+        when(client.reserve(anyInt())).thenReturn(jobMock);
+
+        final Exchange exchange = endpoint.createPollingConsumer().receive(timeout);
+        assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
+        assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
+        verify(client).reserve(timeout);
+    }
+
+    @Before
     @Override
-    protected String getTubeName() {
-        return tubeName;
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        reset(client);
+        super.setUp();
+        endpoint = Helper.getEndpoint("beanstalk:tube", context, client);
     }
 }

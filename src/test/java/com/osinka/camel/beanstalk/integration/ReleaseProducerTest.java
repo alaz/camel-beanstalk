@@ -1,5 +1,6 @@
-package com.osinka.camel.beanstalk;
+package com.osinka.camel.beanstalk.integration;
 
+import com.osinka.camel.beanstalk.Headers;
 import com.surftools.BeanstalkClient.Job;
 import java.io.IOException;
 import org.apache.camel.CamelExecutionException;

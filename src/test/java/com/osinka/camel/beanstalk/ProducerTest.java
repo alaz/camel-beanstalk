@@ -38,7 +38,6 @@ public class ProducerTest extends CamelTestSupport {
         assertNotNull("Producer", producer);
         assertThat("Producer class", producer, instanceOf(PutProducer.class));
 
-        template = context.createProducerTemplate();
         final Exchange exchange = template.send(endpoint, ExchangePattern.InOnly, new Processor() { // TODO: SetBodyProcessor(?)
             public void process(Exchange exchange) {
                 exchange.getIn().setBody(testMessage);
@@ -63,7 +62,6 @@ public class ProducerTest extends CamelTestSupport {
         assertNotNull("Producer", producer);
         assertThat("Producer class", producer, instanceOf(PutProducer.class));
 
-        template = context.createProducerTemplate();
         final Exchange exchange = template.send(endpoint, ExchangePattern.InOut, new Processor() { // TODO: SetBodyProcessor(?)
             public void process(Exchange exchange) {
                 exchange.getIn().setBody(testMessage);
@@ -88,7 +86,6 @@ public class ProducerTest extends CamelTestSupport {
         assertNotNull("Producer", producer);
         assertThat("Producer class", producer, instanceOf(PutProducer.class));
 
-        template = context.createProducerTemplate();
         final Exchange exchange = template.send(endpoint, ExchangePattern.InOnly, new Processor() { // TODO: SetBodyProcessor(?)
             public void process(Exchange exchange) {
                 exchange.getIn().setHeader(Headers.PRIORITY, priority);

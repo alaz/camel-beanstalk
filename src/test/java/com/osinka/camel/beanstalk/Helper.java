@@ -25,8 +25,10 @@ public final class Helper {
         };
     }
 
-    public static BeanstalkEndpoint getEndpoint(String uri, CamelContext context, Client client) {
-        return new BeanstalkEndpoint(uri, context.getComponent("beanstalk"), mockConn(client));
+    public static BeanstalkEndpoint getEndpoint(String uri, CamelContext context, Client client) throws Exception {
+        BeanstalkEndpoint endpoint = new BeanstalkEndpoint(uri, context.getComponent("beanstalk"), mockConn(client));
+        context.addEndpoint(uri, endpoint);
+        return endpoint;
     }
 
     public static byte[] stringToBytes(final String s) throws IOException {

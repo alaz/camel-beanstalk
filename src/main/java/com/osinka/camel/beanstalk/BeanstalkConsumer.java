@@ -109,8 +109,6 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
 
     @Override
     public BeanstalkEndpoint getEndpoint() {
-        if (!isStarted())
-            return null;
         return (BeanstalkEndpoint) super.getEndpoint();
     }
 

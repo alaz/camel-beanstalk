@@ -6,13 +6,13 @@ package com.osinka.camel.beanstalk;
  */
 public final class Headers {
     // in
-    public static final String PRIORITY     = "camel.beanstalk.priority";
-    public static final String DELAY        = "camel.beanstalk.delay";
-    public static final String TIME_TO_RUN  = "camel.beanstalk.timeToRun";
+    public static final String PRIORITY     = "beanstalk.priority";
+    public static final String DELAY        = "beanstalk.delay";
+    public static final String TIME_TO_RUN  = "beanstalk.timeToRun";
 
     // in/out
-    public static final String JOB_ID       = "camel.beanstalk.jobId";
+    public static final String JOB_ID       = "beanstalk.jobId";
 
     // out
-    public static final String RESULT       = "camel.beanstalk.result";
+    public static final String RESULT       = "beanstalk.result";
 }

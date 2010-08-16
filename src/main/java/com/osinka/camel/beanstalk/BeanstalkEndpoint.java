@@ -1,6 +1,5 @@
 package com.osinka.camel.beanstalk;
 
-import java.util.Map;
 import org.apache.camel.Component;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultPollingEndpoint;
@@ -16,10 +15,11 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
     private final transient Log LOG = LogFactory.getLog(BeanstalkEndpoint.class);
     final ConnectionSettings conn;
 
-    String command = BeanstalkComponent.COMMAND_PUT;
-    long priority = BeanstalkComponent.DEFAULT_PRIORITY;
-    int delay     = BeanstalkComponent.DEFAULT_DELAY;
-    int timeToRun = BeanstalkComponent.DEFAULT_TIME_TO_RUN;
+    String command      = BeanstalkComponent.COMMAND_PUT;
+    long priority       = BeanstalkComponent.DEFAULT_PRIORITY;
+    int delay           = BeanstalkComponent.DEFAULT_DELAY;
+    int timeToRun       = BeanstalkComponent.DEFAULT_TIME_TO_RUN;
+    String onFailure    = BeanstalkComponent.COMMAND_BURY;
 
     BeanstalkEndpoint(final String uri, final Component component, final ConnectionSettings conn) {
         super(uri, component);
@@ -55,6 +55,14 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
         return timeToRun;
     }
 
+    public String getOnFailure() {
+        return onFailure;
+    }
+
+    public void setOnFailure(String onFailure) {
+        this.onFailure = onFailure;
+    }
+
     @Override
     public Producer createProducer() throws IllegalArgumentException {
         if (BeanstalkComponent.COMMAND_PUT.equals(command)) {
@@ -77,16 +85,24 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
             if (LOG.isDebugEnabled())
                 LOG.debug("Creating 'delete' producer for "+getEndpointUri());
             return new DeleteProducer(this, conn.newWritingClient());
+        } else if (BeanstalkComponent.COMMAND_KICK.equals(command)) {
+            if (LOG.isDebugEnabled())
+                LOG.debug("Creating 'kick' producer for "+getEndpointUri());
+            return new KickProducer(this, conn.newWritingClient());
         }
 
         throw new IllegalArgumentException(String.format("Unknown command for Beanstalk endpoint: %s", command));
     }
 
     @Override
-    public PollingConsumer createPollingConsumer() {
+    public PollingConsumer createPollingConsumer() throws Exception {
         if (LOG.isDebugEnabled())
             LOG.debug("Creating polling consumer for "+getEndpointUri());
-        return new BeanstalkConsumer(this, conn.newReadingClient());
+
+        BeanstalkConsumer consumer = new BeanstalkConsumer(this, conn.newReadingClient());
+        configureConsumer(consumer);
+        consumer.setOnFailure(onFailure);
+        return consumer;
     }
 
     @Override

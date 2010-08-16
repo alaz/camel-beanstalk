@@ -14,11 +14,12 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author alaz
  */
-public class BeanstalkConsumer extends PollingConsumerSupport implements Synchronization {
+public class BeanstalkConsumer extends PollingConsumerSupport {
     private final transient Log LOG = LogFactory.getLog(BeanstalkConsumer.class);
-    
+
+    final Synchronization sync = new ExchangeSync();
     final Client beanstalk;
-    String cmdOnFailure = "release";
+    String onFailure = BeanstalkComponent.COMMAND_BURY;
 
     public BeanstalkConsumer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
         super(endpoint);
@@ -41,11 +42,11 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
     }
 
     public String getOnFailure() {
-        return cmdOnFailure;
+        return onFailure;
     }
 
-    public void setOnFailure(String cmd) {
-        this.cmdOnFailure = cmd;
+    public void setOnFailure(String onFailure) {
+        this.onFailure = onFailure;
     }
 
     Exchange reserve(Integer timeout) {
@@ -59,51 +60,9 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
         final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
         exchange.getIn().setHeader(Headers.JOB_ID, job.getJobId());
         exchange.getIn().setBody(job.getData(), byte[].class);
-        exchange.addOnCompletion(this);
+        exchange.addOnCompletion(sync);
 
         return exchange;
-    }
-
-    @Override
-    public void onComplete(final Exchange exchange) {
-        try {
-            final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
-            final boolean result = beanstalk.delete(jobId.longValue());
-
-            if (LOG.isInfoEnabled())
-                LOG.info(String.format("Job %d succeeded, deleting it. Result is %b", jobId.longValue(), result));
-        } catch (Exception e) {
-            exchange.setException(e);
-        }
-    }
-
-    @Override
-    public void onFailure(final Exchange exchange) {
-        try {
-            final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
-
-            if (BeanstalkComponent.COMMAND_BURY.equals(cmdOnFailure)) {
-                final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
-                final boolean result = beanstalk.bury(jobId.longValue(), priority);
-
-                if (LOG.isWarnEnabled())
-                    LOG.warn(String.format("Job %d failed, burying it with priority %d. Result is %b", jobId, priority, result));
-            } else if (BeanstalkComponent.COMMAND_RELEASE.equals(cmdOnFailure)) {
-                final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
-                final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
-                final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
-
-                if (LOG.isWarnEnabled())
-                    LOG.warn(String.format("Job %d failed, releasing it with priority %d, delay %d. Result is %b", jobId, priority, delay, result));
-            } else if (BeanstalkComponent.COMMAND_DELETE.equals(cmdOnFailure)) {
-                final boolean result = beanstalk.delete(jobId.longValue());
-
-                if (LOG.isWarnEnabled())
-                    LOG.warn(String.format("Job %d failed, deleting it. Result is %b", jobId, result));
-            }
-        } catch (Exception e) {
-            exchange.setException(e);
-        }
     }
 
     @Override
@@ -117,5 +76,49 @@ public class BeanstalkConsumer extends PollingConsumerSupport implements Synchro
 
     @Override
     protected void doStop() {
+    }
+
+    class ExchangeSync implements Synchronization {
+        @Override
+        public void onComplete(final Exchange exchange) {
+            try {
+                final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
+                final boolean result = beanstalk.delete(jobId.longValue());
+
+                if (LOG.isInfoEnabled())
+                    LOG.info(String.format("Job %d succeeded, deleting it. Result is %b", jobId.longValue(), result));
+            } catch (Exception e) {
+                exchange.setException(e);
+            }
+        }
+
+        @Override
+        public void onFailure(final Exchange exchange) {
+            try {
+                final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
+
+                if (BeanstalkComponent.COMMAND_BURY.equals(onFailure)) {
+                    final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
+                    final boolean result = beanstalk.bury(jobId.longValue(), priority);
+
+                    if (LOG.isWarnEnabled())
+                        LOG.warn(String.format("Job %d failed, burying it with priority %d. Result is %b", jobId, priority, result));
+                } else if (BeanstalkComponent.COMMAND_RELEASE.equals(onFailure)) {
+                    final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
+                    final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
+                    final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
+
+                    if (LOG.isWarnEnabled())
+                        LOG.warn(String.format("Job %d failed, releasing it with priority %d, delay %d. Result is %b", jobId, priority, delay, result));
+                } else if (BeanstalkComponent.COMMAND_DELETE.equals(onFailure)) {
+                    final boolean result = beanstalk.delete(jobId.longValue());
+
+                    if (LOG.isWarnEnabled())
+                        LOG.warn(String.format("Job %d failed, deleting it. Result is %b", jobId, result));
+                }
+            } catch (Exception e) {
+                exchange.setException(e);
+            }
+        }
     }
 }

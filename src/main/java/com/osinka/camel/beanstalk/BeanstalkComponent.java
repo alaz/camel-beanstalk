@@ -1,9 +1,6 @@
 package com.osinka.camel.beanstalk;
 
-import com.surftools.BeanstalkClient.Client;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.impl.DefaultComponent;
@@ -30,6 +27,7 @@ public class BeanstalkComponent extends DefaultComponent {
     public final static String COMMAND_PUT      = "put";
     public final static String COMMAND_TOUCH    = "touch";
     public final static String COMMAND_DELETE   = "delete";
+    public final static String COMMAND_KICK     = "kick";
 
     public final static long DEFAULT_PRIORITY       = 0; // 0 is highest
     public final static int  DEFAULT_DELAY          = 0;

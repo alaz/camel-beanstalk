@@ -22,7 +22,7 @@ bc. from("beanstalk:testTube").log("Processing job #${in.header.beanstalk.jobId}
 
 In the first route we are listening for new jobs in tube "testTube". When they are arriving, we are trying to parse integer value from the message body. If done successful, we log it and this successful exchange completion makes Camel component to _delete_ this job from Beanstalk automatically. Contrary, when we cannot parse the job data, the exchange failes and the Camel component _buries_ it by default, so that it can be processed later or probably even manually.
 
-So the second route periodically gives Beanstalk the command to _kick_ 10 jobs to the normal queue out of buried and/or delayed state.
+So the second route periodically requests Beanstalk to _kick_ 10 jobs out of buried and/or delayed state to the normal queue.
 
 h2. Component URI format
 
@@ -61,4 +61,4 @@ h3. Consumer parameters
 
 By default the consumer calls @delete@ on successful job completion and calls @bury@ on failure. You can choose which command to execute in the case of failure by specifying @onFailure@ parameter in the URI. It can take values of @bury@, @delete@ or @release@.
 
-Be careful when specifying @release@, as the failed job will immediately become available in the same tube and your consumer will try to acquire it again.
+Be careful when specifying @release@, as the failed job will immediately become available in the same tube and your consumer will try to acquire it again. You can @release@ and specify _jobDelay_ though.

@@ -69,12 +69,19 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludes>
                         <exclude>com/osinka/camel/beanstalk/integration/**</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <links>
+                        <link>http://camel.apache.org/maven/camel-2.2.0/camel-core/apidocs/</link>
+                    </links>
                 </configuration>
             </plugin>
             <plugin>
@@ -89,11 +96,12 @@
             <plugin>
                 <groupId>com.mycila.maven-license-plugin</groupId>
                 <artifactId>maven-license-plugin</artifactId>
-                <version>1.6.0</version>
+                <version>1.8.0</version>
                 <configuration>
                     <header>${basedir}/src/etc/header.txt</header>
                     <quiet>false</quiet>
                     <failIfMissing>true</failIfMissing>
+                    <strictCheck>true</strictCheck>
                     <excludes>
                         <exclude>.git/**</exclude>
                         <exclude>.manager/**</exclude>

@@ -1,14 +1,35 @@
+/**
+ * Copyright (C) 2010 Alexander Azarov <azarov@osinka.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.osinka.camel.beanstalk;
 
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.net.URLDecoder;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClientImpl.ClientImpl;
+import java.io.UnsupportedEncodingException;
 
 /**
+ * Represents the connection to Beanstalk.
+ * <p>
+ * Along with the list of tubes it may watch.
  *
- * @author alaz
+ * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  */
 public class ConnectionSettings {
     final String host;
@@ -30,12 +51,28 @@ public class ConnectionSettings {
         final Scanner scanner = new Scanner(tube);
         scanner.useDelimiter("\\+");
         final ArrayList<String> buffer = new ArrayList<String>();
-        while (scanner.hasNext())
-            buffer.add(scanner.next());
+        while (scanner.hasNext()) {
+            final String tubeRaw = scanner.next();
+            try {
+                buffer.add( URLDecoder.decode(tubeRaw, "UTF-8") );
+            } catch (UnsupportedEncodingException e) {
+                buffer.add(tubeRaw);
+            }
+        }
         this.tubes = buffer.toArray(new String[0]);
         scanner.close();
     }
 
+    /**
+     * Returns the {@link Client} instance ready for writing
+     * operations, e.g. "put".
+     * <p>
+     * <code>use(tube)</code> is applied during this call.
+     *
+     * @return {@link Client} instance
+     * @throws IllegalArgumentException the exception is raised when this ConnectionSettings
+     * has more than one tube.
+     */
     public Client newWritingClient() throws IllegalArgumentException {
         if (tubes.length > 1) {
             throw new IllegalArgumentException("There must be only one tube specified for Beanstalk producer");
@@ -48,6 +85,14 @@ public class ConnectionSettings {
         return client;
     }
 
+    /**
+     * Returns the {@link Client} instance for reading operations with all
+     * the tubes aleady watched
+     * <p>
+     * <code>watch(tube)</code> is applied for every tube during this call.
+     *
+     * @return {@link Client} instance
+     */
     public Client newReadingClient() {
         final ClientImpl client = new ClientImpl(host, port);
         for (String tube : tubes)

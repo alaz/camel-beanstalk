@@ -1,3 +1,19 @@
+/**
+ * Copyright (C) 2010 Alexander Azarov <azarov@osinka.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.osinka.camel.beanstalk;
 
 import org.apache.camel.CamelContext;
@@ -9,10 +25,6 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- *
- * @author alaz
- */
 public class EndpointTest {
     CamelContext context = null;
 
@@ -48,7 +60,15 @@ public class EndpointTest {
     public void testCommand() {
         BeanstalkEndpoint endpoint = context.getEndpoint("beanstalk:default?command=release", BeanstalkEndpoint.class);
         assertNotNull("Beanstalk endpoint", endpoint);
-        assertEquals("Command", "release", endpoint.command);
+        assertEquals("Command", BeanstalkComponent.COMMAND_RELEASE, endpoint.command);
+    }
+
+    @Test
+    public void testTubes() {
+        BeanstalkEndpoint endpoint = context.getEndpoint("beanstalk:host:11303/tube1+tube%2B+tube%3F?command=kick", BeanstalkEndpoint.class);
+        assertNotNull("Beanstalk endpoint", endpoint);
+        assertEquals("Command", BeanstalkComponent.COMMAND_KICK, endpoint.command);
+        assertArrayEquals("Tubes", new String[] {"tube1", "tube+", "tube?"}, endpoint.conn.tubes);
     }
 
     @Test(expected=FailedToCreateProducerException.class)

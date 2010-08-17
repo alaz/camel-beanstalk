@@ -1,3 +1,19 @@
+/**
+ * Copyright (C) 2010 Alexander Azarov <azarov@osinka.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
@@ -11,8 +27,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
+ * PollingConsumer to read Beanstalk jobs.
  *
- * @author alaz
+ * This consumer will add a {@link Synchronization} object to every {@link Exchange}
+ * object it creates in order to react on successful exchange completion or failure.
+ *
+ * In the case of successful completion, Beanstalk's <code>delete</code> method is
+ * called upon the job. In the case of failure the default reaction is to call
+ * <code>bury</code>.
+ *
+ * The only configuration this consumer may have is the reaction on failures: possible
+ * variants are "bury", "release" or "delete"
+ *
+ * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  */
 public class BeanstalkConsumer extends PollingConsumerSupport {
     private final transient Log LOG = LogFactory.getLog(BeanstalkConsumer.class);

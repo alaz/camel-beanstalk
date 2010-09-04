@@ -32,7 +32,7 @@ public class ConsumerTest extends BeanstalkCamelTestSupport {
 
     @Test
     public void testReceive() throws IOException, InterruptedException {
-        final long jobId = beanstalk.put(0, 0, 5, Helper.stringToBytes(testMessage));
+        final long jobId = beanstalk().put(0, 0, 5, Helper.stringToBytes(testMessage));
 
         final Exchange exchange = consumer.receive("beanstalk:"+getTubeName());
         assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
@@ -43,7 +43,7 @@ public class ConsumerTest extends BeanstalkCamelTestSupport {
     public void testReceiveNoWait() throws IOException, InterruptedException {
         assertNull(consumer.receiveNoWait("beanstalk:"+tubeName));
 
-        final long jobId = beanstalk.put(0, 0, 5, Helper.stringToBytes(testMessage));
+        final long jobId = beanstalk().put(0, 0, 5, Helper.stringToBytes(testMessage));
 
         final Exchange exchange = consumer.receiveNoWait("beanstalk:"+getTubeName());
         assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
@@ -54,7 +54,7 @@ public class ConsumerTest extends BeanstalkCamelTestSupport {
     @Ignore
     public void testReceiveMock() throws IOException, InterruptedException {
         final MockEndpoint mock = getMockEndpoint("mock:result");
-        final long jobId = beanstalk.put(0, 0, 5, Helper.stringToBytes(testMessage));
+        final long jobId = beanstalk().put(0, 0, 5, Helper.stringToBytes(testMessage));
 
         mock.message(0).header(Headers.JOB_ID).isEqualTo(Long.valueOf(jobId));
         mock.expectedMessageCount(1);

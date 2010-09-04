@@ -53,11 +53,11 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in 'In' message", jobId);
 
-        final Job job = beanstalk.reserve(1);
+        final Job job = beanstalk().reserve(1);
         assertNotNull("Beanstalk client got message", job);
         assertEquals("Job body from the server", testMessage, new String(job.getData()));
         assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
-        beanstalk.delete(jobId.longValue());
+        beanstalk().delete(jobId.longValue());
     }
 
     @Test
@@ -75,11 +75,11 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         final Long jobId = out.getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in 'Out' message", jobId);
 
-        final Job job = beanstalk.reserve(1);
+        final Job job = beanstalk().reserve(1);
         assertNotNull("Beanstalk client got message", job);
         assertEquals("Job body from the server", testMessage, new String(job.getData()));
         assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
-        beanstalk.delete(jobId.longValue());
+        beanstalk().delete(jobId.longValue());
     }
 
     @Test
@@ -96,9 +96,9 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in message", jobId);
 
-        final Job job = beanstalk.reserve(0);
+        final Job job = beanstalk().reserve(0);
         assertNull("Beanstalk client has no message", job);
-        beanstalk.delete(jobId.longValue());
+        beanstalk().delete(jobId.longValue());
     }
 
     @Override

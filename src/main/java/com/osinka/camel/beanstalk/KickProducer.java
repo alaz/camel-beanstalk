@@ -31,16 +31,14 @@ import org.apache.commons.logging.LogFactory;
  */
 public class KickProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(KickProducer.class);
-    final Client beanstalk;
 
-    KickProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
-        super(endpoint);
-        this.beanstalk = beanstalk;
+    KickProducer(final BeanstalkEndpoint endpoint, final ThreadLocal<Client> beanstalk) {
+        super(endpoint, beanstalk);
     }
 
     public void process(final Exchange exchange) throws InvalidPayloadException {
         final Integer jobs = ExchangeHelper.getMandatoryInBody(exchange, Integer.class);
-        final int result = beanstalk.kick(jobs);
+        final int result = beanstalk().kick(jobs);
         if (LOG.isDebugEnabled())
             LOG.debug(String.format("Kick %d jobs. Result is %d", jobs, result));
 

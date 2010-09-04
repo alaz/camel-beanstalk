@@ -45,12 +45,16 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
     private final transient Log LOG = LogFactory.getLog(BeanstalkConsumer.class);
 
     final Synchronization sync = new ExchangeSync();
-    final Client beanstalk;
+    final ThreadLocal<Client> client;
     String onFailure = BeanstalkComponent.COMMAND_BURY;
 
-    public BeanstalkConsumer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
+    public BeanstalkConsumer(final BeanstalkEndpoint endpoint, final ThreadLocal<Client> client) {
         super(endpoint);
-        this.beanstalk = beanstalk;
+        this.client = client;
+    }
+
+    public Client beanstalk() {
+        return client.get();
     }
 
     @Override
@@ -77,7 +81,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
     }
 
     Exchange reserve(Integer timeout) {
-        final Job job = beanstalk.reserve(timeout);
+        final Job job = beanstalk().reserve(timeout);
         if (job == null)
             return null;
 
@@ -110,7 +114,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
         public void onComplete(final Exchange exchange) {
             try {
                 final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
-                final boolean result = beanstalk.delete(jobId.longValue());
+                final boolean result = beanstalk().delete(jobId.longValue());
 
                 if (LOG.isInfoEnabled())
                     LOG.info(String.format("Job %d succeeded, deleting it. Result is %b", jobId.longValue(), result));
@@ -126,19 +130,19 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
 
                 if (BeanstalkComponent.COMMAND_BURY.equals(onFailure)) {
                     final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
-                    final boolean result = beanstalk.bury(jobId.longValue(), priority);
+                    final boolean result = beanstalk().bury(jobId.longValue(), priority);
 
                     if (LOG.isWarnEnabled())
                         LOG.warn(String.format("Job %d failed, burying it with priority %d. Result is %b", jobId, priority, result));
                 } else if (BeanstalkComponent.COMMAND_RELEASE.equals(onFailure)) {
                     final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
                     final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
-                    final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
+                    final boolean result = beanstalk().release(jobId.longValue(), priority, delay);
 
                     if (LOG.isWarnEnabled())
                         LOG.warn(String.format("Job %d failed, releasing it with priority %d, delay %d. Result is %b", jobId, priority, delay, result));
                 } else if (BeanstalkComponent.COMMAND_DELETE.equals(onFailure)) {
-                    final boolean result = beanstalk.delete(jobId.longValue());
+                    final boolean result = beanstalk().delete(jobId.longValue());
 
                     if (LOG.isWarnEnabled())
                         LOG.warn(String.format("Job %d failed, deleting it. Result is %b", jobId, result));

@@ -29,11 +29,9 @@ import org.apache.commons.logging.LogFactory;
  */
 public class PutProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(PutProducer.class);
-    final Client beanstalk;
 
-    PutProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
-        super(endpoint);
-        this.beanstalk = beanstalk;
+    PutProducer(final BeanstalkEndpoint endpoint, final ThreadLocal<Client> beanstalk) {
+        super(endpoint, beanstalk);
     }
 
     public void process(final Exchange exchange) {
@@ -43,7 +41,7 @@ public class PutProducer extends AbstractBeanstalkProducer {
         final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
         final int timeToRun = BeanstalkExchangeHelper.getTimeToRun(getEndpoint(), exchange.getIn());
 
-        final long jobId = beanstalk.put(priority, delay, timeToRun, in.getBody(byte[].class));
+        final long jobId = beanstalk().put(priority, delay, timeToRun, in.getBody(byte[].class));
         if (LOG.isDebugEnabled())
             LOG.debug(String.format("Created job %d with priority %d, delay %d seconds and time to run %d", jobId, priority, delay, timeToRun));
 

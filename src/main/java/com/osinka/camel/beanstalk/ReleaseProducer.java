@@ -31,11 +31,9 @@ import org.apache.commons.logging.LogFactory;
  */
 public class ReleaseProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(ReleaseProducer.class);
-    final Client beanstalk;
 
-    ReleaseProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
-        super(endpoint);
-        this.beanstalk = beanstalk;
+    ReleaseProducer(final BeanstalkEndpoint endpoint, final ThreadLocal<Client> beanstalk) {
+        super(endpoint, beanstalk);
     }
 
     public void process(final Exchange exchange) throws NoSuchHeaderException {
@@ -45,7 +43,7 @@ public class ReleaseProducer extends AbstractBeanstalkProducer {
         final long priority = BeanstalkExchangeHelper.getPriority(getEndpoint(), exchange.getIn());
         final int delay = BeanstalkExchangeHelper.getDelay(getEndpoint(), exchange.getIn());
 
-        final boolean result = beanstalk.release(jobId.longValue(), priority, delay);
+        final boolean result = beanstalk().release(jobId.longValue(), priority, delay);
         if (LOG.isDebugEnabled())
             LOG.debug(String.format("Job %d released with priority %d, delay %d seconds. Result is %b", jobId, priority, delay, result));
 

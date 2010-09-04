@@ -66,12 +66,22 @@ class MockConnectionSettings extends ConnectionSettings {
     }
 
     @Override
-    public Client newReadingClient() {
-        return client;
+    public ThreadLocal<Client> newReadingClient() {
+        return new ThreadLocal<Client>() {
+            @Override
+            protected Client initialValue() {
+                return client;
+            }
+        };
     }
 
     @Override
-    public Client newWritingClient() {
-        return client;
+    public ThreadLocal<Client> newWritingClient() {
+        return new ThreadLocal<Client>() {
+            @Override
+            protected Client initialValue() {
+                return client;
+            }
+        };
     }
 }

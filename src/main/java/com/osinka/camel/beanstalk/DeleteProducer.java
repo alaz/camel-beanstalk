@@ -30,16 +30,14 @@ import org.apache.commons.logging.LogFactory;
  */
 public class DeleteProducer extends AbstractBeanstalkProducer {
     private final transient Log LOG = LogFactory.getLog(DeleteProducer.class);
-    final Client beanstalk;
 
-    DeleteProducer(final BeanstalkEndpoint endpoint, final Client beanstalk) {
-        super(endpoint);
-        this.beanstalk = beanstalk;
+    DeleteProducer(final BeanstalkEndpoint endpoint, final ThreadLocal<Client> beanstalk) {
+        super(endpoint, beanstalk);
     }
 
     public void process(final Exchange exchange) throws NoSuchHeaderException {
         final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
-        final boolean result = beanstalk.delete(jobId.longValue());
+        final boolean result = beanstalk().delete(jobId.longValue());
         if (LOG.isDebugEnabled())
             LOG.debug(String.format("Job %d deleted. Result is %b", jobId, result));
 

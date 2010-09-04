@@ -73,16 +73,21 @@ public class ConnectionSettings {
      * @throws IllegalArgumentException the exception is raised when this ConnectionSettings
      * has more than one tube.
      */
-    public Client newWritingClient() throws IllegalArgumentException {
+    public ThreadLocal<Client> newWritingClient() throws IllegalArgumentException {
         if (tubes.length > 1) {
             throw new IllegalArgumentException("There must be only one tube specified for Beanstalk producer");
         }
 
         final String tube = tubes.length > 0 ? tubes[0] : BeanstalkComponent.DEFAULT_TUBE;
 
-        final ClientImpl client = new ClientImpl(host, port);
-        client.useTube(tube);
-        return client;
+        return new ThreadLocal<Client>() {
+            @Override
+            protected Client initialValue() {
+                final ClientImpl client = new ClientImpl(host, port);
+                client.useTube(tube);
+                return client;
+            }
+        };
     }
 
     /**
@@ -93,11 +98,16 @@ public class ConnectionSettings {
      *
      * @return {@link Client} instance
      */
-    public Client newReadingClient() {
-        final ClientImpl client = new ClientImpl(host, port);
-        for (String tube : tubes)
-            client.watch(tube);
-        return client;
+    public ThreadLocal<Client> newReadingClient() {
+        return new ThreadLocal<Client>() {
+            @Override
+            protected Client initialValue() {
+                final ClientImpl client = new ClientImpl(host, port);
+                for (String tube : tubes)
+                    client.watch(tube);
+                return client;
+            }
+        };
     }
 
     @Override

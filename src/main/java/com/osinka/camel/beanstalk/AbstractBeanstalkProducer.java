@@ -16,6 +16,7 @@
 
 package com.osinka.camel.beanstalk;
 
+import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.impl.DefaultProducer;
@@ -26,8 +27,15 @@ import org.apache.camel.util.ExchangeHelper;
  * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  */
 abstract class AbstractBeanstalkProducer extends DefaultProducer {
-    public AbstractBeanstalkProducer(BeanstalkEndpoint endpoint) {
+    final ThreadLocal<Client> client;
+
+    public AbstractBeanstalkProducer(BeanstalkEndpoint endpoint, ThreadLocal<Client> client) {
         super(endpoint);
+        this.client = client;
+    }
+
+    public Client beanstalk() {
+        return client.get();
     }
 
     @Override

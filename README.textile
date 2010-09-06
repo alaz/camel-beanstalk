@@ -12,14 +12,19 @@ h2. Example
 
 This Camel component lets you both request the jobs for processing and supply them to Beanstald daemon. Our simple demo routes may look like
 
-bc. from("beanstalk:testTube").log("Processing job #${in.header.beanstalk.jobId} with body ${in.body}").process(new Processor() {
+bc. from("beanstalk:testTube").
+   log("Processing job #${in.header.beanstalk.jobId} with body ${in.body}").
+   process(new Processor() {
      @override public void process(Exchange exchange) {
        // try to make integer value out of body
        exchange.getIn().setBody( Integer.valueOf(exchange.getIn().getBody(classOf[String])) );
      }
-   }).log("Parsed job #${in.header.camel.beanstalk.jobId} to body ${in.body}");
+   }).
+   log("Parsed job #${in.header.camel.beanstalk.jobId} to body ${in.body}");
 
-bc. from("timer:dig?period=30seconds").setBody(constant(10)).log("Kick ${in.body} buried/delayed tasks").to("beanstalk:testTube?command=kick");
+bc. from("timer:dig?period=30seconds").
+   setBody(constant(10)).log("Kick ${in.body} buried/delayed tasks").
+   to("beanstalk:testTube?command=kick");
 
 In the first route we are listening for new jobs in tube "testTube". When they are arriving, we are trying to parse integer value from the message body. If done successful, we log it and this successful exchange completion makes Camel component to _delete_ this job from Beanstalk automatically. Contrary, when we cannot parse the job data, the exchange failes and the Camel component _buries_ it by default, so that it can be processed later or probably we are going to inspect failed jobs manually.
 

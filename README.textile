@@ -6,7 +6,7 @@ h1. Camel component for Beanstalk
 
 @camel-beanstalk@ project provides a Camel component for job retrieval and post-processing of Beanstalk jobs.
 
-Please see the detailed explanation of Beanstalk job lifecycle at "Beanstalk protocol":http://github.com/kr/beanstalkd/blob/v1.3/doc/protocol.txt
+You can find the detailed explanation of Beanstalk job lifecycle at "Beanstalk protocol":http://github.com/kr/beanstalkd/blob/v1.3/doc/protocol.txt
 
 h2. Example
 
@@ -68,3 +68,7 @@ h3. Consumer parameters
 By default the consumer calls @delete@ on successful job completion and calls @bury@ on failure. You can choose which command to execute in the case of failure by specifying @onFailure@ parameter in the URI. It can take values of @bury@, @delete@ or @release@.
 
 Be careful when specifying @release@, as the failed job will immediately become available in the same tube and your consumer will try to acquire it again. You can @release@ and specify _jobDelay_ though.
+
+h2. License
+
+This component is distributed under "Apache License 2.0":http://www.apache.org/licenses/LICENSE-2.0

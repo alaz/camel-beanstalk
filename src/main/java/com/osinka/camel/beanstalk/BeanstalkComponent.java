@@ -49,9 +49,9 @@ public class BeanstalkComponent extends DefaultComponent {
     public final static String COMMAND_DELETE   = "delete";
     public final static String COMMAND_KICK     = "kick";
 
-    public final static long DEFAULT_PRIORITY       = 0; // 0 is highest
+    public final static long DEFAULT_PRIORITY       = 1000; // 0 is highest
     public final static int  DEFAULT_DELAY          = 0;
-    public final static int  DEFAULT_TIME_TO_RUN    = 0; // if 0 the daemon sets 1.
+    public final static int  DEFAULT_TIME_TO_RUN    = 60; // if 0 the daemon sets 1.
 
     static ConnectionSettingsFactory connFactory = new ConnectionSettingsFactory();
 

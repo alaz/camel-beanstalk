@@ -20,7 +20,7 @@ bc. from("beanstalk:testTube").
        exchange.getIn().setBody( Integer.valueOf(exchange.getIn().getBody(classOf[String])) );
      }
    }).
-   log("Parsed job #${in.header.camel.beanstalk.jobId} to body ${in.body}");
+   log("Parsed job #${in.header.beanstalk.jobId} to body ${in.body}");
 
 bc. from("timer:dig?period=30seconds").
    setBody(constant(10)).log("Kick ${in.body} buried/delayed tasks").
@@ -51,9 +51,9 @@ h3. Parameters
 Common parameters are listed below along with the message header names. Message header always takes the highest precedence over the URI.
 
 |_. Parameter|_. Header|_. Unit|_. Default|
-|@jobPriority@|_beanstalk.priority_|integer|0 (actually the highest, see "Beanstalk protocol":http://github.com/kr/beanstalkd/blob/v1.3/doc/protocol.txt)|
+|@jobPriority@|_beanstalk.priority_|integer|1000 (0 is the highest, see "Beanstalk protocol":http://github.com/kr/beanstalkd/blob/v1.3/doc/protocol.txt)|
 |@jobDelay@|_beanstalk.delay_|seconds|0|
-|@jobTimeToRun@|_beanstalk.timeToRun_|seconds|0 (and the beanstalkd daemon raises it to 1 automatically, see "Beanstalk protocol":http://github.com/kr/beanstalkd/blob/v1.3/doc/protocol.txt)|
+|@jobTimeToRun@|_beanstalk.timeToRun_|seconds|60 (when 0, the beanstalkd daemon raises it to 1 automatically, see "Beanstalk protocol":http://github.com/kr/beanstalkd/blob/v1.3/doc/protocol.txt)|
 
 h3. Producer parameters
 

@@ -85,8 +85,8 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
         if (job == null)
             return null;
 
-        if (LOG.isInfoEnabled())
-            LOG.info(String.format("Received job ID %d (data length %d)", job.getJobId(), job.getData().length));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("Received job ID %d (data length %d)", job.getJobId(), job.getData().length));
 
         final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
         exchange.getIn().setHeader(Headers.JOB_ID, job.getJobId());
@@ -116,8 +116,8 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
                 final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
                 final boolean result = beanstalk().delete(jobId.longValue());
 
-                if (LOG.isInfoEnabled())
-                    LOG.info(String.format("Job %d succeeded, deleting it. Result is %b", jobId.longValue(), result));
+                if (LOG.isDebugEnabled())
+                    LOG.debug(String.format("Job %d succeeded, deleting it. Result is %b", jobId.longValue(), result));
             } catch (Exception e) {
                 exchange.setException(e);
             }

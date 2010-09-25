@@ -18,17 +18,12 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
-import org.apache.camel.Consumer;
-import org.apache.camel.Endpoint;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.JndiRegistry;
 import org.apache.camel.test.CamelTestSupport;
-import org.apache.camel.spi.PollingConsumerPollStrategy;
-import org.apache.camel.util.ObjectHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -105,13 +100,6 @@ public class ConsumerCmdTest extends CamelTestSupport {
         };
     }
 
-    @Override
-    protected JndiRegistry createRegistry() throws Exception {
-        JndiRegistry jndi = super.createRegistry();
-        jndi.bind("myPoll", new MyPollStrategy());
-        return jndi;
-    }
-
     @Before
     @Override
     public void setUp() throws Exception {
@@ -119,27 +107,5 @@ public class ConsumerCmdTest extends CamelTestSupport {
         reset(client);
 	Helper.mockComponent(client);
 	super.setUp();
-    }
-
-    private class MyPollStrategy implements PollingConsumerPollStrategy {
-        @Override
-        public boolean begin(Consumer consumer, Endpoint endpoint) {
-            try {
-                System.err.println("Starting "+consumer);
-                consumer.start();
-            } catch (Exception e) {
-                ObjectHelper.wrapRuntimeCamelException(e);
-            }
-            return true;
-        }
-
-        @Override
-        public void commit(Consumer consumer, Endpoint endpoint) {
-        }
-
-        @Override
-        public boolean rollback(Consumer consumer, Endpoint endpoint, int retryCounter, Exception cause) throws Exception {
-            throw cause;
-        }
     }
 }

@@ -41,7 +41,7 @@ public class BuryProducerTest extends BeanstalkCamelTestSupport {
     @Ignore("requires reserve - bury sequence")
     @Test
     public void testBury() throws InterruptedException, IOException {
-        long jobId = beanstalk().put(0, 0, 5, new byte[0]);
+        long jobId = client.put(0, 0, 5, new byte[0]);
         assertTrue("Valid Job Id", jobId > 0);
 
         resultEndpoint.expectedMessageCount(1);
@@ -55,10 +55,10 @@ public class BuryProducerTest extends BeanstalkCamelTestSupport {
         assertNotNull("Job ID in message", messageJobId);
         assertEquals("Message Job ID equals", jobId, messageJobId.longValue());
 
-        final Job job = beanstalk().reserve(0);
+        final Job job = client.reserve(0);
         assertNull("Beanstalk client has no message", job);
 
-        final Job buried = beanstalk().peekBuried();
+        final Job buried = client.peekBuried();
         assertNotNull("Job in buried", buried);
         assertEquals("Buried job id", jobId, buried.getJobId());
     }

@@ -79,9 +79,10 @@ public class ConsumerTest extends CamelTestSupport {
 
         when(jobMock.getJobId()).thenReturn(jobId);
         when(jobMock.getData()).thenReturn(payload);
-        when(client.reserve(0)).thenReturn(jobMock);
+        when(client.reserve(anyInt())).thenReturn(jobMock);
 
         final Exchange exchange = endpoint.createPollingConsumer().receiveNoWait();
+        assertNotNull("Exchange", exchange);
         assertEquals("Job ID", Long.valueOf(jobId), exchange.getIn().getHeader(Headers.JOB_ID, Long.class));
         assertEquals("Job body", testMessage, exchange.getIn().getBody(String.class));
         verify(client).reserve(0);

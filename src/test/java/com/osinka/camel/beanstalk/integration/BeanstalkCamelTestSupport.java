@@ -24,11 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 
 public abstract class BeanstalkCamelTestSupport extends CamelTestSupport {
-    protected ThreadLocal<Client> client = null;
-
-    protected Client beanstalk() {
-        return client.get();
-    }
+    protected Client client = null;
 
     @Before
     @Override
@@ -37,7 +33,7 @@ public abstract class BeanstalkCamelTestSupport extends CamelTestSupport {
 
         final String tube = getTubeName();
         client = new ConnectionSettings(tube).newWritingClient();
-        beanstalk().watch(tube);
+        client.watch(tube);
         clearTube();
     }
 
@@ -49,12 +45,12 @@ public abstract class BeanstalkCamelTestSupport extends CamelTestSupport {
     }
 
     protected void clearTube() {
-        if (beanstalk() != null) {
+        if (client != null) {
             Job job;
-            while (beanstalk().kick(100) >0)
+            while (client.kick(100) >0)
                 ;
-            while ((job = beanstalk().reserve(0)) != null)
-                beanstalk().delete(job.getJobId());
+            while ((job = client.reserve(0)) != null)
+                client.delete(job.getJobId());
         }
     }
 

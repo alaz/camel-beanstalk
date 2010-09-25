@@ -6,7 +6,6 @@ import com.osinka.camel.beanstalk.Headers;
 import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.Exchange;
 import org.apache.camel.NoSuchHeaderException;
-import org.apache.camel.util.ExchangeHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -25,7 +24,7 @@ public class BuryProcessor extends DefaultProcessor {
     public void process(Exchange exchange) throws NoSuchHeaderException {
         clientNotNull(exchange);
         
-        final Long jobId = ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
+        final Long jobId = BeanstalkExchangeHelper.getJobID(exchange);
         final long priority = BeanstalkExchangeHelper.getPriority(endpoint, exchange.getIn());
         final boolean result = client.bury(jobId.longValue(), priority);
 

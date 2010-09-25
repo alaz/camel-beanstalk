@@ -18,7 +18,6 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
-import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -30,14 +29,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.*;
 
-public class ConsumerCmdTest extends CamelTestSupport {
+public class CompletionTest extends CamelTestSupport {
     final String testMessage = "hello, world";
 
     @Mock
     Client client;
-
-    @EndpointInject(uri = "mock:result")
-    MockEndpoint result;
 
     boolean shouldIdie = false;
     final Processor processor = new Processor() {
@@ -59,10 +55,12 @@ public class ConsumerCmdTest extends CamelTestSupport {
                 .thenReturn(jobMock)
                 .thenReturn(null);
 
+        MockEndpoint result = getMockEndpoint("mock:result");
         result.expectedMinimumMessageCount(1);
         result.expectedBodiesReceived(testMessage);
-        result.message(0).header(Headers.JOB_ID).isEqualTo(Long.valueOf(jobId));
-        result.assertIsSatisfied();
+        result.expectedPropertyReceived(Headers.JOB_ID, jobId);
+        result.message(0).header(Headers.JOB_ID).isEqualTo(jobId);
+        result.assertIsSatisfied(1000);
 
         verify(client, atLeastOnce()).reserve(anyInt());
         verify(client).delete(jobId);
@@ -83,8 +81,9 @@ public class ConsumerCmdTest extends CamelTestSupport {
                 .thenReturn(jobMock)
                 .thenReturn(null);
 
+        MockEndpoint result = getMockEndpoint("mock:result");
         result.expectedMinimumMessageCount(1);
-        result.assertIsNotSatisfied(50);
+        result.assertIsNotSatisfied(1000);
 
         verify(client, atLeastOnce()).reserve(anyInt());
         verify(client).release(jobId, priority, delay);
@@ -95,7 +94,7 @@ public class ConsumerCmdTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("beanstalk:tube?onFailure=release").process(processor).to("mock:result").routeId("test");
+                from("beanstalk:tube?consumer.onFailure=release").process(processor).to("mock:result");
             }
         };
     }

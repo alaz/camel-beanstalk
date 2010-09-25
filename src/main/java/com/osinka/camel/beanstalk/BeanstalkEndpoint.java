@@ -18,24 +18,24 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.Component;
+import org.apache.camel.Consumer;
+import org.apache.camel.Processor;
 import org.apache.camel.Producer;
-import org.apache.camel.impl.DefaultPollingEndpoint;
-import org.apache.camel.PollingConsumer;
 import com.osinka.camel.beanstalk.processors.*;
+import org.apache.camel.impl.ScheduledPollEndpoint;
 
 /**
  * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  * @see BeanstalkConsumer
  * @see PutProducer
  */
-public class BeanstalkEndpoint extends DefaultPollingEndpoint {
+public class BeanstalkEndpoint extends ScheduledPollEndpoint {
     final ConnectionSettings conn;
 
     String command      = BeanstalkComponent.COMMAND_PUT;
     long priority       = BeanstalkComponent.DEFAULT_PRIORITY;
     int delay           = BeanstalkComponent.DEFAULT_DELAY;
     int timeToRun       = BeanstalkComponent.DEFAULT_TIME_TO_RUN;
-    String onFailure    = BeanstalkComponent.COMMAND_BURY;
 
     BeanstalkEndpoint(final String uri, final Component component, final ConnectionSettings conn) {
         super(uri, component);
@@ -81,22 +81,6 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
     }
 
     /**
-     * @return The command {@link org.apache.camel.Consumer} must execute in
-     * case of failure
-     */
-    public String getOnFailure() {
-        return onFailure;
-    }
-
-    /**
-     * @param onFailure The command {@link org.apache.camel.Consumer} must
-     * execute in case of failure
-     */
-    public void setOnFailure(String onFailure) {
-        this.onFailure = onFailure;
-    }
-
-    /**
      * Creates Camel producer.
      * <p>
      * Depending on the command parameter (see {@link BeanstalkComponent} URI) it
@@ -128,10 +112,9 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
     }
 
     @Override
-    public PollingConsumer createPollingConsumer() throws Exception {
-        BeanstalkConsumer consumer = new BeanstalkConsumer(this);
+    public Consumer createConsumer(Processor processor) throws Exception {
+        BeanstalkConsumer consumer = new BeanstalkConsumer(this, processor);
         configureConsumer(consumer);
-        consumer.setOnFailure(onFailure);
         return consumer;
     }
 

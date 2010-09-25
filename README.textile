@@ -69,6 +69,8 @@ By default the consumer calls @delete@ on successful job completion and calls @b
 
 Be careful when specifying @release@, as the failed job will immediately become available in the same tube and your consumer will try to acquire it again. You can @release@ and specify _jobDelay_ though.
 
+The consumer stores Job ID in the exchange's property _beanstalk.jobId_.
+
 h2. License
 
 This component is distributed under "Apache License 2.0":http://www.apache.org/licenses/LICENSE-2.0

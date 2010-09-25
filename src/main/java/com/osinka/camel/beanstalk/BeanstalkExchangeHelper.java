@@ -16,7 +16,10 @@
 
 package com.osinka.camel.beanstalk;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.Message;
+import org.apache.camel.NoSuchHeaderException;
+import org.apache.camel.util.ExchangeHelper;
 
 /**
  *
@@ -33,5 +36,12 @@ public final class BeanstalkExchangeHelper {
 
     public static int getTimeToRun(final BeanstalkEndpoint endpoint, final Message in) {
         return in.getHeader(Headers.TIME_TO_RUN, Integer.valueOf(endpoint.getJobTimeToRun()), Integer.class).intValue();
+    }
+
+    public static long getJobID(final Exchange exchange) throws NoSuchHeaderException {
+        Long jobId = exchange.getProperty(Headers.JOB_ID, Long.class);
+        if (jobId != null)
+            return jobId;
+        return ExchangeHelper.getMandatoryHeader(exchange, Headers.JOB_ID, Long.class);
     }
 }

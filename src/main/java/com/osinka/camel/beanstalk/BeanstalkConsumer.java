@@ -19,19 +19,17 @@ package com.osinka.camel.beanstalk;
 import com.osinka.camel.beanstalk.processors.*;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
-import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Processor;
-import org.apache.camel.impl.PollingConsumerSupport;
 import org.apache.camel.spi.Synchronization;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.camel.RuntimeCamelException;
+import org.apache.camel.impl.ScheduledPollConsumer;
 
 /**
  * PollingConsumer to read Beanstalk jobs.
@@ -48,42 +46,58 @@ import org.apache.camel.RuntimeCamelException;
  *
  * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  */
-public class BeanstalkConsumer extends PollingConsumerSupport {
+public class BeanstalkConsumer extends ScheduledPollConsumer {
     private final transient Log LOG = LogFactory.getLog(BeanstalkConsumer.class);
 
-    final Synchronization sync = new ExchangeSync();
-    final ExecutorService executorService;
-    Client client = null;
     String onFailure = BeanstalkComponent.COMMAND_BURY;
 
-    public BeanstalkConsumer(final BeanstalkEndpoint endpoint) {
-        super(endpoint);
-        this.executorService = endpoint.getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this, "Beanstalk");
+    final ExecutorService beanstalkExecutor;
+    private Client client = null;
 
-        // FIXME: should be in doStart(). https://issues.apache.org/activemq/browse/CAMEL-3158
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (LOG.isDebugEnabled())
-                    LOG.debug("Consumer initializing, getting Beanstalk client instance");
-                client = getEndpoint().getConnection().newReadingClient();
-            }
-        });
+    final Synchronization sync = new ExchangeSync();
+    private final Callable<Exchange> pollTask = new Callable<Exchange>() {
+        final Integer NO_WAIT = Integer.valueOf(0);
+
+        @Override
+        public Exchange call() throws RuntimeCamelException {
+            if (client == null)
+                throw new RuntimeCamelException("Beanstalk client not initialized");
+
+            final Job job = client.reserve(NO_WAIT);
+            if (job == null)
+                return null;
+
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("Received job ID %d (data length %d)", job.getJobId(), job.getData().length));
+
+            final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
+            exchange.setProperty(Headers.JOB_ID, job.getJobId());
+            exchange.getIn().setBody(job.getData(), byte[].class);
+            exchange.addOnCompletion(sync);
+
+            return exchange;
+        }
+    };
+
+    public BeanstalkConsumer(BeanstalkEndpoint endpoint, Processor processor) {
+        super(endpoint, processor);
+        this.beanstalkExecutor = endpoint.getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this, "Beanstalk");
+    }
+
+    public BeanstalkConsumer(BeanstalkEndpoint endpoint, Processor processor, ScheduledExecutorService executor) {
+        super(endpoint, processor, executor);
+        this.beanstalkExecutor = endpoint.getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this, "Beanstalk");
     }
 
     @Override
-    public Exchange receiveNoWait() {
-        return reserve(Integer.valueOf(0));
-    }
+    protected void poll() throws Exception {
+        while (isPollAllowed()) {
+            final Exchange exchange = beanstalkExecutor.submit(pollTask).get();
+            if (exchange == null)
+                break;
 
-    @Override
-    public Exchange receive() {
-        return reserve(null);
-    }
-
-    @Override
-    public Exchange receive(final long timeout) {
-        return reserve( Integer.valueOf((int)timeout) );
+            getProcessor().process(exchange);
+        }
     }
 
     public String getOnFailure() {
@@ -94,64 +108,35 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
         this.onFailure = onFailure;
     }
 
-    Exchange reserve(final Integer timeout) {
-        final Callable<Exchange> task = new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws RuntimeCamelException {
-                if (client == null)
-                    throw new RuntimeCamelException("Beanstalk client not initialized");
-
-                final Job job = client.reserve(timeout);
-                if (job == null)
-                    return null;
-
-                if (LOG.isDebugEnabled())
-                    LOG.debug(String.format("Received job ID %d (data length %d)", job.getJobId(), job.getData().length));
-
-                final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
-                exchange.getIn().setHeader(Headers.JOB_ID, job.getJobId());
-                exchange.getIn().setBody(job.getData(), byte[].class);
-                exchange.addOnCompletion(sync);
-
-                return exchange;
-            }
-        };
-        final Future<Exchange> exchangeFuture = executorService.submit(task);
-
-        try {
-            return exchangeFuture.get();
-        } catch (CancellationException e) {
-            LOG.warn("Job receive cancelled", e);
-        } catch (InterruptedException e) {
-            LOG.warn("Job receive interrupted", e);
-        } catch (ExecutionException e) {
-            LOG.error("Failed to get a job", e.getCause());
-        }
-        return null;
-    }
-
     @Override
     public BeanstalkEndpoint getEndpoint() {
         return (BeanstalkEndpoint) super.getEndpoint();
     }
 
     @Override
-    protected void doStart() {
-        // FIXME: DefaultScheduledPollConsumer wraps PollingConsumer
-        // FIXME: and does not call its start()
-        // FIXME: https://issues.apache.org/activemq/browse/CAMEL-3158
+    protected void doStart() throws Exception {
+        beanstalkExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (LOG.isInfoEnabled())
+                    LOG.info("Consumer initializing, getting Beanstalk client instance");
+                client = getEndpoint().getConnection().newReadingClient();
+            }
+        });
+        super.doStart();
     }
 
     @Override
-    protected void doStop() {
-        executorService.shutdown();
+    protected void doStop() throws Exception {
+        super.doStop();
+        beanstalkExecutor.shutdown();
     }
 
     class ExchangeSync implements Synchronization {
         @Override
         public void onComplete(final Exchange exchange) {
             final Processor processor = new DeleteProcessor(getEndpoint(), client);
-            executorService.submit(new ProcessExchangeTask(exchange, processor));
+            beanstalkExecutor.submit(new ProcessExchangeTask(exchange, processor));
         }
 
         @Override
@@ -166,7 +151,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
             else
                 return;
 
-            executorService.submit(new ProcessExchangeTask(exchange, processor));
+            beanstalkExecutor.submit(new ProcessExchangeTask(exchange, processor));
         }
     }
 }

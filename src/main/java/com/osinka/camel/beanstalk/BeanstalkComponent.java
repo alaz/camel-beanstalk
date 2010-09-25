@@ -53,7 +53,7 @@ public class BeanstalkComponent extends DefaultComponent {
     public final static int  DEFAULT_DELAY          = 0;
     public final static int  DEFAULT_TIME_TO_RUN    = 60; // if 0 the daemon sets 1.
 
-    static ConnectionSettingsFactory connFactory = new ConnectionSettingsFactory();
+    static ConnectionSettingsFactory connFactory = ConnectionSettingsFactory.DEFAULT;
 
     public BeanstalkComponent() {
     }

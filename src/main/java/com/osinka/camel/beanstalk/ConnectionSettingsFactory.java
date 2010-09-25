@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  */
 public class ConnectionSettingsFactory {
+    public static final ConnectionSettingsFactory DEFAULT = new ConnectionSettingsFactory();
+
     final Pattern HostPortTubeRE = Pattern.compile("^(([\\w.-]+)(:([\\d]+))?/)?([\\w%+]*)$");
 
     public ConnectionSettings parseUri(final String remaining) throws IllegalArgumentException {
@@ -37,4 +39,5 @@ public class ConnectionSettingsFactory {
         final String tubes = m.group(5) != null ? m.group(5) : "";
         return new ConnectionSettings(host, port, tubes);
     }
+
 }

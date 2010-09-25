@@ -17,7 +17,6 @@
 package com.osinka.camel.beanstalk;
 
 import com.osinka.camel.beanstalk.processors.*;
-import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
@@ -28,17 +27,12 @@ import org.apache.camel.Producer;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.CamelTestSupport;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.Mockito.*;
 
-public class ProducerTest extends CamelTestSupport {
-    @Mock Client client;
+public class ProducerTest extends BeanstalkMockTestSupport {
     final String testMessage = "hello, world";
 
     @EndpointInject(uri = "beanstalk:tube")
@@ -366,14 +360,5 @@ public class ProducerTest extends CamelTestSupport {
                 from("direct:start").to("beanstalk:tube?jobPriority=1020&jobDelay=50&jobTimeToRun=65").to("mock:result");
             }
         };
-    }
-
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        reset(client);
-	Helper.mockComponent(client);
-	super.setUp();
     }
 }

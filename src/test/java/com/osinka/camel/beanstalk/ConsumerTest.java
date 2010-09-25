@@ -16,20 +16,14 @@
 
 package com.osinka.camel.beanstalk;
 
-import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.CamelTestSupport;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.*;
 
-public class ConsumerTest extends CamelTestSupport {
-    @Mock Client client;
+public class ConsumerTest extends BeanstalkMockTestSupport {
     final String testMessage = "hello, world";
 
     @EndpointInject(uri = "beanstalk:tube")
@@ -65,14 +59,5 @@ public class ConsumerTest extends CamelTestSupport {
                 from("beanstalk:tube").to("mock:result");
             }
         };
-    }
-
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        reset(client);
-	Helper.mockComponent(client);
-	super.setUp();
     }
 }

@@ -16,24 +16,16 @@
 
 package com.osinka.camel.beanstalk;
 
-import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.CamelTestSupport;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.*;
 
-public class CompletionTest extends CamelTestSupport {
+public class CompletionTest extends BeanstalkMockTestSupport {
     final String testMessage = "hello, world";
-
-    @Mock
-    Client client;
 
     boolean shouldIdie = false;
     final Processor processor = new Processor() {
@@ -97,14 +89,5 @@ public class CompletionTest extends CamelTestSupport {
                 from("beanstalk:tube?consumer.onFailure=release").process(processor).to("mock:result");
             }
         };
-    }
-
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        reset(client);
-	Helper.mockComponent(client);
-	super.setUp();
     }
 }

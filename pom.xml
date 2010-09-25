@@ -70,12 +70,12 @@
         <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-<!--                <configuration>
+                <configuration>
                     <excludes>
                         <exclude>com/osinka/camel/beanstalk/integration/**</exclude>
                     </excludes>
                 </configuration>
--->            </plugin>
+            </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>

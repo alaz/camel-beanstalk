@@ -16,7 +16,7 @@ public class BeanstalkMockTestSupport extends CamelTestSupport {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         reset(client);
-	Helper.mockComponent(client);
+        Helper.mockComponent(client);
         super.setUp();
     }
 

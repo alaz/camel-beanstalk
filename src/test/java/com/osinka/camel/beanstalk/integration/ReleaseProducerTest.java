@@ -30,8 +30,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ReleaseProducerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "releaseTest";
-
     @EndpointInject(uri = "mock:result")
     protected MockEndpoint resultEndpoint;
 
@@ -41,7 +39,7 @@ public class ReleaseProducerTest extends BeanstalkCamelTestSupport {
     @Ignore("requires reserve - release sequence")
     @Test
     public void testBury() throws InterruptedException, IOException {
-        long jobId = client.put(0, 0, 5, new byte[0]);
+        long jobId = writer.put(0, 0, 5, new byte[0]);
         assertTrue("Valid Job Id", jobId > 0);
 
         resultEndpoint.expectedMessageCount(1);
@@ -55,10 +53,10 @@ public class ReleaseProducerTest extends BeanstalkCamelTestSupport {
         assertNotNull("Job ID in message", messageJobId);
         assertEquals("Message Job ID equals", jobId, messageJobId.longValue());
 
-        final Job job = client.reserve(0);
+        final Job job = reader.reserve(0);
         assertNull("Beanstalk client has no message", job);
 
-        final Job buried = client.peekBuried();
+        final Job buried = reader.peekBuried();
         assertNotNull("Job in buried", buried);
         assertEquals("Buried job id", jobId, buried.getJobId());
     }
@@ -80,10 +78,5 @@ public class ReleaseProducerTest extends BeanstalkCamelTestSupport {
                 from("direct:start").to("beanstalk:"+tubeName+"?command=release").to("mock:result");
             }
         };
-    }
-
-    @Override
-    protected String getTubeName() {
-        return tubeName;
     }
 }

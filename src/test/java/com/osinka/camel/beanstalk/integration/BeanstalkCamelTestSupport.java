@@ -17,42 +17,25 @@
 package com.osinka.camel.beanstalk.integration;
 
 import com.osinka.camel.beanstalk.ConnectionSettings;
+import com.osinka.camel.beanstalk.ConnectionSettingsFactory;
 import com.surftools.BeanstalkClient.Client;
-import com.surftools.BeanstalkClient.Job;
 import org.apache.camel.test.junit4.CamelTestSupport;
-import org.junit.After;
 import org.junit.Before;
 
 public abstract class BeanstalkCamelTestSupport extends CamelTestSupport {
-    protected Client client = null;
+    final ConnectionSettingsFactory connFactory = ConnectionSettingsFactory.DEFAULT;
+    final String tubeName = String.format("test%d", System.currentTimeMillis());
+
+    protected Client reader = null;
+    protected Client writer = null;
 
     @Before
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
-        final String tube = getTubeName();
-        client = new ConnectionSettings(tube).newWritingClient();
-        client.watch(tube);
-        clearTube();
+        ConnectionSettings conn = connFactory.parseUri(tubeName);
+        writer = conn.newWritingClient();
+        reader = conn.newReadingClient();
     }
-
-    @After
-    @Override
-    public void tearDown() throws Exception {
-        clearTube();
-        super.tearDown();
-    }
-
-    protected void clearTube() {
-        if (client != null) {
-            Job job;
-            while (client.kick(100) >0)
-                ;
-            while ((job = client.reserve(0)) != null)
-                client.delete(job.getJobId());
-        }
-    }
-
-    protected abstract String getTubeName();
 }

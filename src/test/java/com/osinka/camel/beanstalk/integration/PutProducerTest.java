@@ -33,7 +33,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PutProducerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "putTest";
     final String testMessage = "Hello, world!";
 
     @EndpointInject(uri = "mock:result")
@@ -53,11 +52,11 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in 'In' message", jobId);
 
-        final Job job = client.reserve(1);
+        final Job job = reader.reserve(5);
         assertNotNull("Beanstalk client got message", job);
         assertEquals("Job body from the server", testMessage, new String(job.getData()));
         assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
-        client.delete(jobId.longValue());
+        reader.delete(jobId.longValue());
     }
 
     @Test
@@ -75,11 +74,11 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         final Long jobId = out.getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in 'Out' message", jobId);
 
-        final Job job = client.reserve(1);
+        final Job job = reader.reserve(5);
         assertNotNull("Beanstalk client got message", job);
         assertEquals("Job body from the server", testMessage, new String(job.getData()));
         assertEquals("Job ID from the server", jobId.longValue(), job.getJobId());
-        client.delete(jobId.longValue());
+        reader.delete(jobId.longValue());
     }
 
     @Test
@@ -96,9 +95,9 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
         final Long jobId = resultEndpoint.getReceivedExchanges().get(0).getIn().getHeader(Headers.JOB_ID, Long.class);
         assertNotNull("Job ID in message", jobId);
 
-        final Job job = client.reserve(0);
+        final Job job = reader.reserve(0);
         assertNull("Beanstalk client has no message", job);
-        client.delete(jobId.longValue());
+        reader.delete(jobId.longValue());
     }
 
     @Override
@@ -109,10 +108,5 @@ public class PutProducerTest extends BeanstalkCamelTestSupport {
                 from("direct:start").to("beanstalk:"+tubeName+"?jobPriority=1000&jobTimeToRun=5").to("mock:result");
             }
         };
-    }
-
-    @Override
-    protected String getTubeName() {
-        return tubeName;
     }
 }

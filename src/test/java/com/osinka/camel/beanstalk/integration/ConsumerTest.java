@@ -25,7 +25,6 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.Test;
 
 public class ConsumerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "reserveTest";
     final String testMessage = "Hello, world!";
 
     @EndpointInject(uri = "mock:result")
@@ -33,13 +32,13 @@ public class ConsumerTest extends BeanstalkCamelTestSupport {
 
     @Test
     public void testReceive() throws IOException, InterruptedException {
-        final long jobId = client.put(0, 0, 5, Helper.stringToBytes(testMessage));
+        final long jobId = writer.put(0, 0, 10, Helper.stringToBytes(testMessage));
 
         result.expectedMessageCount(1);
         result.expectedPropertyReceived(Headers.JOB_ID, jobId);
         result.message(0).header(Headers.JOB_ID).isEqualTo(Long.valueOf(jobId));
         result.message(0).body().isEqualTo(testMessage);
-        result.assertIsSatisfied();
+        result.assertIsSatisfied(500);
     }
 
     @Override
@@ -50,10 +49,5 @@ public class ConsumerTest extends BeanstalkCamelTestSupport {
                 from("beanstalk:"+tubeName).to("mock:result");
             }
         };
-    }
-
-    @Override
-    protected String getTubeName() {
-        return tubeName;
     }
 }

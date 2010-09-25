@@ -60,6 +60,7 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
         super(endpoint);
         this.executorService = endpoint.getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this, "Beanstalk");
 
+        // FIXME: should be in doStart(). https://issues.apache.org/activemq/browse/CAMEL-3158
         executorService.execute(new Runnable() {
             @Override
             public void run() {
@@ -135,16 +136,14 @@ public class BeanstalkConsumer extends PollingConsumerSupport {
     }
 
     @Override
-    protected void doStart() throws Exception {
-        // The first task is to set Client.
-        if (LOG.isErrorEnabled())
-            LOG.error("Consumer doStart ****");
+    protected void doStart() {
+        // FIXME: DefaultScheduledPollConsumer wraps PollingConsumer
+        // FIXME: and does not call its start()
+        // FIXME: https://issues.apache.org/activemq/browse/CAMEL-3158
     }
 
     @Override
-    protected void doStop() throws Exception {
-        if (LOG.isDebugEnabled())
-            LOG.debug("Shutting down Beanstalk executor");
+    protected void doStop() {
         executorService.shutdown();
     }
 

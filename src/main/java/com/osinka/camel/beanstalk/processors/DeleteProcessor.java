@@ -26,7 +26,9 @@ public class DeleteProcessor extends DefaultProcessor {
 
         final Long jobId = BeanstalkExchangeHelper.getJobID(exchange);
         final boolean result = client.delete(jobId.longValue());
-        if (LOG.isDebugEnabled())
+        if (!result && LOG.isWarnEnabled())
+            LOG.warn(String.format("Failed to delete job %d", jobId));
+        else if (LOG.isDebugEnabled())
             LOG.debug(String.format("Job %d deleted. Result is %b", jobId, result));
 
         answerWith(exchange, Headers.RESULT, result);

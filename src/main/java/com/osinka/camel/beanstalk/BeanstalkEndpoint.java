@@ -108,7 +108,7 @@ public class BeanstalkEndpoint extends ScheduledPollEndpoint {
         else
             throw new IllegalArgumentException(String.format("Unknown command for Beanstalk endpoint: %s", command));
 
-        return new SingleThreadedDelegatedProcessor(this, processor);
+        return new BeanstalkProducer(this, processor);
     }
 
     @Override

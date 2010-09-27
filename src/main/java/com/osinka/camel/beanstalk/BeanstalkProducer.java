@@ -29,13 +29,12 @@ import com.osinka.camel.beanstalk.processors.ProcessExchangeTask;
  *
  * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  */
-class SingleThreadedDelegatedProcessor extends DefaultProducer implements AsyncProcessor {
-    final ExecutorService executorService;
+public class BeanstalkProducer extends DefaultProducer implements AsyncProcessor {
+    private ExecutorService executorService;
     final CommandProcessor processor;
 
-    public SingleThreadedDelegatedProcessor(BeanstalkEndpoint endpoint, final CommandProcessor processor) throws Exception {
+    public BeanstalkProducer(BeanstalkEndpoint endpoint, final CommandProcessor processor) throws Exception {
         super(endpoint);
-        this.executorService = endpoint.getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this, "Beanstalk");
         this.processor = processor;
 
     }
@@ -48,12 +47,19 @@ class SingleThreadedDelegatedProcessor extends DefaultProducer implements AsyncP
 
     @Override
     public boolean process(final Exchange exchange, final AsyncCallback callback) {
-        executorService.submit(new ProcessExchangeTask(exchange, processor, callback));
+        try {
+            executorService.submit(new ProcessExchangeTask(exchange, processor, callback));
+        } catch (Throwable t) {
+            exchange.setException(t);
+            callback.done(true);
+            return true;
+        }
         return false;
     }
 
     @Override
     public void doStart() {
+        executorService = getEndpoint().getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this, "Beanstalk");
         // The first task is to init CommandProcessor.
         executorService.execute(new Runnable() {
             @Override

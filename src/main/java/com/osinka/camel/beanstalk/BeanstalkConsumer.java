@@ -17,6 +17,7 @@
 package com.osinka.camel.beanstalk;
 
 import com.osinka.camel.beanstalk.processors.*;
+import com.surftools.BeanstalkClient.BeanstalkException;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 import java.util.concurrent.Callable;
@@ -55,6 +56,12 @@ public class BeanstalkConsumer extends ScheduledPollConsumer {
     private Client client = null;
 
     private final Synchronization sync = new ExchangeSync();
+    private final Runnable initTask = new Runnable() {
+        @Override
+        public void run() {
+            client = getEndpoint().getConnection().newReadingClient();
+        }
+    };
     private final Callable<Exchange> pollTask = new Callable<Exchange>() {
         final Integer NO_WAIT = Integer.valueOf(0);
 
@@ -63,19 +70,25 @@ public class BeanstalkConsumer extends ScheduledPollConsumer {
             if (client == null)
                 throw new RuntimeCamelException("Beanstalk client not initialized");
 
-            final Job job = client.reserve(NO_WAIT);
-            if (job == null)
+            try {
+                final Job job = client.reserve(NO_WAIT);
+                if (job == null)
+                    return null;
+
+                if (LOG.isDebugEnabled())
+                    LOG.debug(String.format("%s received job ID %d (data length %d)", getEndpoint().conn, job.getJobId(), job.getData().length));
+
+                final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
+                exchange.setProperty(Headers.JOB_ID, job.getJobId());
+                exchange.getIn().setBody(job.getData(), byte[].class);
+                exchange.addOnCompletion(sync);
+
+                return exchange;
+            } catch (BeanstalkException e) {
+                LOG.error("Beanstalk client error", e);
+                beanstalkExecutor.submit(initTask);
                 return null;
-
-            if (LOG.isDebugEnabled())
-                LOG.debug(String.format("%s received job ID %d (data length %d)", getEndpoint().conn, job.getJobId(), job.getData().length));
-
-            final Exchange exchange = getEndpoint().createExchange(ExchangePattern.InOnly);
-            exchange.setProperty(Headers.JOB_ID, job.getJobId());
-            exchange.getIn().setBody(job.getData(), byte[].class);
-            exchange.addOnCompletion(sync);
-
-            return exchange;
+            }
         }
     };
 
@@ -114,12 +127,7 @@ public class BeanstalkConsumer extends ScheduledPollConsumer {
     @Override
     protected void doStart() throws Exception {
         beanstalkExecutor = getEndpoint().getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this, "Beanstalk");
-        beanstalkExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                client = getEndpoint().getConnection().newReadingClient();
-            }
-        });
+        beanstalkExecutor.execute(initTask);
         super.doStart();
     }
 

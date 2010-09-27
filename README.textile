@@ -65,9 +65,11 @@ Producer behaviour is affected by the @command@ parameter which tells what to do
 
 h3. Consumer parameters
 
-By default the consumer calls @delete@ on successful job completion and calls @bury@ on failure. You can choose which command to execute in the case of failure by specifying @onFailure@ parameter in the URI. It can take values of @bury@, @delete@ or @release@.
+By default the consumer calls @delete@ on successful job completion and calls @bury@ on failure. You can choose which command to execute in the case of failure by specifying @consumer.onFailure@ parameter in the URI. It can take values of @bury@, @delete@ or @release@.
 
 Be careful when specifying @release@, as the failed job will immediately become available in the same tube and your consumer will try to acquire it again. You can @release@ and specify _jobDelay_ though.
+
+The consumer stores Job ID in the exchange's property _beanstalk.jobId_.
 
 h2. License
 

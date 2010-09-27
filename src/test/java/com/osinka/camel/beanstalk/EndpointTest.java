@@ -68,6 +68,7 @@ public class EndpointTest {
         BeanstalkEndpoint endpoint = context.getEndpoint("beanstalk:host:11303/tube1+tube%2B+tube%3F?command=kick", BeanstalkEndpoint.class);
         assertNotNull("Beanstalk endpoint", endpoint);
         assertEquals("Command", BeanstalkComponent.COMMAND_KICK, endpoint.command);
+        assertEquals("Host", "host", endpoint.conn.host);
         assertArrayEquals("Tubes", new String[] {"tube1", "tube+", "tube?"}, endpoint.conn.tubes);
     }
 

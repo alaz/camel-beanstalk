@@ -30,8 +30,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class TouchProducerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "touchTest";
-
     @EndpointInject(uri = "mock:result")
     protected MockEndpoint resultEndpoint;
 
@@ -41,7 +39,7 @@ public class TouchProducerTest extends BeanstalkCamelTestSupport {
     @Ignore("requires reserve - touch sequence")
     @Test
     public void testBury() throws InterruptedException, IOException {
-        long jobId = beanstalk().put(0, 0, 5, new byte[0]);
+        long jobId = writer.put(0, 0, 5, new byte[0]);
         assertTrue("Valid Job Id", jobId > 0);
 
         resultEndpoint.expectedMessageCount(1);
@@ -55,10 +53,10 @@ public class TouchProducerTest extends BeanstalkCamelTestSupport {
         assertNotNull("Job ID in message", messageJobId);
         assertEquals("Message Job ID equals", jobId, messageJobId.longValue());
 
-        final Job job = beanstalk().reserve(0);
+        final Job job = reader.reserve(0);
         assertNull("Beanstalk client has no message", job);
 
-        final Job buried = beanstalk().peekBuried();
+        final Job buried = reader.peekBuried();
         assertNotNull("Job in buried", buried);
         assertEquals("Buried job id", jobId, buried.getJobId());
     }
@@ -80,10 +78,5 @@ public class TouchProducerTest extends BeanstalkCamelTestSupport {
                 from("direct:start").to("beanstalk:"+tubeName+"?command=touch").to("mock:result");
             }
         };
-    }
-
-    @Override
-    protected String getTubeName() {
-        return tubeName;
     }
 }

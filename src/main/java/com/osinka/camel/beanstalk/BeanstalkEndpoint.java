@@ -18,31 +18,33 @@ package com.osinka.camel.beanstalk;
 
 import com.surftools.BeanstalkClient.Client;
 import org.apache.camel.Component;
+import org.apache.camel.Consumer;
+import org.apache.camel.Processor;
 import org.apache.camel.Producer;
-import org.apache.camel.impl.DefaultPollingEndpoint;
-import org.apache.camel.PollingConsumer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.osinka.camel.beanstalk.processors.*;
+import org.apache.camel.impl.ScheduledPollEndpoint;
 
 /**
  * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
  * @see BeanstalkConsumer
  * @see PutProducer
  */
-public class BeanstalkEndpoint extends DefaultPollingEndpoint {
-    private final transient Log LOG = LogFactory.getLog(BeanstalkEndpoint.class);
+public class BeanstalkEndpoint extends ScheduledPollEndpoint {
     final ConnectionSettings conn;
 
     String command      = BeanstalkComponent.COMMAND_PUT;
     long priority       = BeanstalkComponent.DEFAULT_PRIORITY;
     int delay           = BeanstalkComponent.DEFAULT_DELAY;
     int timeToRun       = BeanstalkComponent.DEFAULT_TIME_TO_RUN;
-    String onFailure    = BeanstalkComponent.COMMAND_BURY;
 
     BeanstalkEndpoint(final String uri, final Component component, final ConnectionSettings conn) {
         super(uri, component);
 
         this.conn = conn;
+    }
+
+    public ConnectionSettings getConnection() {
+        return conn;
     }
 
     /**
@@ -79,22 +81,6 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
     }
 
     /**
-     * @return The command {@link org.apache.camel.Consumer} must execute in
-     * case of failure
-     */
-    public String getOnFailure() {
-        return onFailure;
-    }
-
-    /**
-     * @param onFailure The command {@link org.apache.camel.Consumer} must
-     * execute in case of failure
-     */
-    public void setOnFailure(String onFailure) {
-        this.onFailure = onFailure;
-    }
-
-    /**
      * Creates Camel producer.
      * <p>
      * Depending on the command parameter (see {@link BeanstalkComponent} URI) it
@@ -105,44 +91,30 @@ public class BeanstalkEndpoint extends DefaultPollingEndpoint {
      * create a writable {@link Client}
      */
     @Override
-    public Producer createProducer() throws IllegalArgumentException {
-        if (BeanstalkComponent.COMMAND_PUT.equals(command)) {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Creating 'put' producer for "+getEndpointUri());
-            return new PutProducer(this, conn.newWritingClient());
-        } else if (BeanstalkComponent.COMMAND_RELEASE.equals(command)) {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Creating 'release' producer for "+getEndpointUri());
-            return new ReleaseProducer(this, conn.newWritingClient());
-        } else if (BeanstalkComponent.COMMAND_BURY.equals(command)) {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Creating 'bury' producer for "+getEndpointUri());
-            return new BuryProducer(this, conn.newWritingClient());
-        } else if (BeanstalkComponent.COMMAND_TOUCH.equals(command)) {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Creating 'touch' producer for "+getEndpointUri());
-            return new TouchProducer(this, conn.newWritingClient());
-        } else if (BeanstalkComponent.COMMAND_DELETE.equals(command)) {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Creating 'delete' producer for "+getEndpointUri());
-            return new DeleteProducer(this, conn.newWritingClient());
-        } else if (BeanstalkComponent.COMMAND_KICK.equals(command)) {
-            if (LOG.isDebugEnabled())
-                LOG.debug("Creating 'kick' producer for "+getEndpointUri());
-            return new KickProducer(this, conn.newWritingClient());
-        }
+    public Producer createProducer() throws Exception {
+        CommandProcessor processor = null;
+        if (BeanstalkComponent.COMMAND_PUT.equals(command))
+            processor = new PutProcessor(this);
+        else if (BeanstalkComponent.COMMAND_RELEASE.equals(command))
+            processor = new ReleaseProcessor(this);
+        else if (BeanstalkComponent.COMMAND_BURY.equals(command))
+            processor = new BuryProcessor(this);
+        else if (BeanstalkComponent.COMMAND_TOUCH.equals(command))
+            processor = new TouchProcessor(this);
+        else if (BeanstalkComponent.COMMAND_DELETE.equals(command))
+            processor = new DeleteProcessor(this);
+        else if (BeanstalkComponent.COMMAND_KICK.equals(command))
+            processor = new KickProcessor(this);
+        else
+            throw new IllegalArgumentException(String.format("Unknown command for Beanstalk endpoint: %s", command));
 
-        throw new IllegalArgumentException(String.format("Unknown command for Beanstalk endpoint: %s", command));
+        return new BeanstalkProducer(this, processor);
     }
 
     @Override
-    public PollingConsumer createPollingConsumer() throws Exception {
-        if (LOG.isDebugEnabled())
-            LOG.debug("Creating polling consumer for "+getEndpointUri());
-
-        BeanstalkConsumer consumer = new BeanstalkConsumer(this, conn.newReadingClient());
+    public Consumer createConsumer(Processor processor) throws Exception {
+        BeanstalkConsumer consumer = new BeanstalkConsumer(this, processor);
         configureConsumer(consumer);
-        consumer.setOnFailure(onFailure);
         return consumer;
     }
 

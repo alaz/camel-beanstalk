@@ -29,8 +29,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class DeleteProducerTest extends BeanstalkCamelTestSupport {
-    final String tubeName = "deleteTest";
-
     @EndpointInject(uri = "mock:result")
     protected MockEndpoint resultEndpoint;
 
@@ -39,7 +37,7 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
 
     @Test
     public void testDelete() throws InterruptedException, IOException {
-        long jobId = beanstalk().put(0, 0, 5, new byte[0]);
+        long jobId = writer.put(0, 0, 5, new byte[0]);
         assertTrue("Valid Job Id", jobId > 0);
 
         resultEndpoint.expectedMessageCount(1);
@@ -53,7 +51,7 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
         assertNotNull("Job ID in message", messageJobId);
         assertEquals("Message Job ID equals", jobId, messageJobId.longValue());
 
-        final Job job = beanstalk().peek(jobId);
+        final Job job = reader.peek(jobId);
         assertNull("Job has been deleted", job);
     }
 
@@ -74,10 +72,5 @@ public class DeleteProducerTest extends BeanstalkCamelTestSupport {
                 from("direct:start").to("beanstalk:"+tubeName+"?command=delete").to("mock:result");
             }
         };
-    }
-
-    @Override
-    protected String getTubeName() {
-        return tubeName;
     }
 }

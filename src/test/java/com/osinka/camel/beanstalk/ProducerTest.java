@@ -16,7 +16,7 @@
 
 package com.osinka.camel.beanstalk;
 
-import com.surftools.BeanstalkClient.Client;
+import com.osinka.camel.beanstalk.processors.*;
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
@@ -27,17 +27,12 @@ import org.apache.camel.Producer;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.CamelTestSupport;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.Mockito.*;
 
-public class ProducerTest extends CamelTestSupport {
-    @Mock Client client;
+public class ProducerTest extends BeanstalkMockTestSupport {
     final String testMessage = "hello, world";
 
     @EndpointInject(uri = "beanstalk:tube")
@@ -61,7 +56,8 @@ public class ProducerTest extends CamelTestSupport {
 
         final Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(PutProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(PutProcessor.class));
 
         final Exchange exchange = template.send(endpoint, ExchangePattern.InOnly, new Processor() { // TODO: SetBodyProcessor(?)
             public void process(Exchange exchange) {
@@ -85,7 +81,8 @@ public class ProducerTest extends CamelTestSupport {
 
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(PutProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(PutProcessor.class));
 
         final Exchange exchange = template.send(endpoint, ExchangePattern.InOut, new Processor() { // TODO: SetBodyProcessor(?)
             public void process(Exchange exchange) {
@@ -109,7 +106,8 @@ public class ProducerTest extends CamelTestSupport {
 
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(PutProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(PutProcessor.class));
 
         final Exchange exchange = template.send(endpoint, ExchangePattern.InOnly, new Processor() { // TODO: SetBodyProcessor(?)
             public void process(Exchange exchange) {
@@ -132,7 +130,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_BURY);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(BuryProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(BuryProcessor.class));
 
         when(client.bury(jobId, priority)).thenReturn(true);
 
@@ -152,7 +151,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_BURY);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(BuryProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(BuryProcessor.class));
 
         template.send(endpoint, ExchangePattern.InOnly, new Processor() {
             public void process(Exchange exchange) {}
@@ -169,7 +169,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_BURY);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(BuryProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(BuryProcessor.class));
 
         when(client.bury(jobId, priority)).thenReturn(true);
 
@@ -192,7 +193,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_DELETE);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(DeleteProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(DeleteProcessor.class));
 
         when(client.delete(jobId)).thenReturn(true);
 
@@ -212,7 +214,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_DELETE);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(DeleteProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(DeleteProcessor.class));
 
         template.send(endpoint, ExchangePattern.InOnly, new Processor() {
             public void process(Exchange exchange) {}
@@ -230,7 +233,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_RELEASE);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(ReleaseProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(ReleaseProcessor.class));
 
         when(client.release(jobId, priority, delay)).thenReturn(true);
 
@@ -250,7 +254,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_RELEASE);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(ReleaseProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(ReleaseProcessor.class));
 
         template.send(endpoint, ExchangePattern.InOnly, new Processor() {
             public void process(Exchange exchange) {}
@@ -268,7 +273,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_RELEASE);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(ReleaseProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(ReleaseProcessor.class));
 
         when(client.release(jobId, priority, delay)).thenReturn(true);
 
@@ -292,7 +298,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_TOUCH);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(TouchProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(TouchProcessor.class));
 
         when(client.touch(jobId)).thenReturn(true);
 
@@ -312,7 +319,8 @@ public class ProducerTest extends CamelTestSupport {
         endpoint.setCommand(BeanstalkComponent.COMMAND_TOUCH);
         Producer producer = endpoint.createProducer();
         assertNotNull("Producer", producer);
-        assertThat("Producer class", producer, instanceOf(TouchProducer.class));
+        assertThat("Producer class", producer, instanceOf(BeanstalkProducer.class));
+        assertThat("Processor class", ((BeanstalkProducer)producer).processor, instanceOf(TouchProcessor.class));
 
         template.send(endpoint, ExchangePattern.InOnly, new Processor() {
             public void process(Exchange exchange) {}
@@ -352,14 +360,5 @@ public class ProducerTest extends CamelTestSupport {
                 from("direct:start").to("beanstalk:tube?jobPriority=1020&jobDelay=50&jobTimeToRun=65").to("mock:result");
             }
         };
-    }
-
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        reset(client);
-	Helper.mockComponent(client);
-	super.setUp();
     }
 }

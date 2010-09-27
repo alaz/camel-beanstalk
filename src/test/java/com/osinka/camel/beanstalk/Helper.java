@@ -36,6 +36,10 @@ public final class Helper {
         });
     }
 
+    public static void revertComponent() {
+        BeanstalkComponent.setConnectionSettingsFactory(ConnectionSettingsFactory.DEFAULT);
+    }
+
     public static BeanstalkEndpoint getEndpoint(String uri, CamelContext context, Client client) throws Exception {
         BeanstalkEndpoint endpoint = new BeanstalkEndpoint(uri, context.getComponent("beanstalk"), mockConn(client));
         context.addEndpoint(uri, endpoint);
@@ -66,22 +70,12 @@ class MockConnectionSettings extends ConnectionSettings {
     }
 
     @Override
-    public ThreadLocal<Client> newReadingClient() {
-        return new ThreadLocal<Client>() {
-            @Override
-            protected Client initialValue() {
-                return client;
-            }
-        };
+    public Client newReadingClient() {
+        return client;
     }
 
     @Override
-    public ThreadLocal<Client> newWritingClient() {
-        return new ThreadLocal<Client>() {
-            @Override
-            protected Client initialValue() {
-                return client;
-            }
-        };
+    public Client newWritingClient() {
+        return client;
     }
 }

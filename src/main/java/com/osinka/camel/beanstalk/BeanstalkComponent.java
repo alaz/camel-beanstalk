@@ -32,7 +32,7 @@ import org.apache.camel.impl.DefaultComponent;
  * <li><code>jobPriority</code></li>
  * <li><code>jobDelay</code></li>
  * <li><code>jobTimeToRun</code></li>
- * <li><code>onFailure</code></li>
+ * <li><code>consumer.onFailure</code></li>
  * </ul>
  *
  * @author <a href="mailto:azarov@osinka.com">Alexander Azarov</a>
@@ -53,7 +53,7 @@ public class BeanstalkComponent extends DefaultComponent {
     public final static int  DEFAULT_DELAY          = 0;
     public final static int  DEFAULT_TIME_TO_RUN    = 60; // if 0 the daemon sets 1.
 
-    static ConnectionSettingsFactory connFactory = new ConnectionSettingsFactory();
+    static ConnectionSettingsFactory connFactory = ConnectionSettingsFactory.DEFAULT;
 
     public BeanstalkComponent() {
     }
